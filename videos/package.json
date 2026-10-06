@@ -1,0 +1,16 @@
+{
+  "name": "heading-anchors-videos",
+  "private": true,
+  "type": "module",
+  "description": "Explainer video of the Heading Anchors module: narration (Gemini TTS), browser recording (Playwright), assembly (ffmpeg)",
+  "scripts": {
+    "tts": "node tools/tts.mjs",
+    "record": "node tools/record.mjs",
+    "assemble": "node tools/assemble.mjs",
+    "audit": "node tools/audit.mjs",
+    "build": "node tools/build.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

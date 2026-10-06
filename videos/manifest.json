@@ -1,0 +1,63 @@
+{
+  "slug": "heading-anchors-overview",
+  "title": "Heading Anchors for Jahia",
+  "language": "en-US",
+  "voice": "Puck",
+  "voiceStyle": "Warm, friendly and confident male voice, like an experienced support engineer showing a feature to a colleague. Smile audibly, no advertising tone. Clear articulation, calm medium pace, short pauses between sentences, same timbre and energy in every chapter.",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "chapters": [
+    {
+      "id": "problem",
+      "title": "Linking to a section",
+      "narration": "Long documentation pages are hard to share. Here is a page with several sections, but its headings have no anchors. If I add a section name to the address, the browser has nothing to jump to. The link opens the top of the page, and the reader has to scroll and search."
+    },
+    {
+      "id": "enable",
+      "title": "Enable the module on a site",
+      "narration": "Heading Anchors fixes this with a single module. After deploying it, open Administration, then Modules, find Heading Anchors, and enable it on the sites that need it. Sites where the module is not enabled are never touched."
+    },
+    {
+      "id": "anchors",
+      "title": "Readable anchors on every heading",
+      "narration": "Back on the page, nothing looks different, but every heading now has a readable anchor, built from its text. The same link now jumps straight to the section. One detail, though: this site has a sticky header, and the heading lands just underneath it."
+    },
+    {
+      "id": "configure",
+      "title": "Configure it in the OSGi console",
+      "narration": "Everything is configured in the OSGi console, under Tools. Open Configuration, then Heading anchors. Let's turn on the copy link button, and set the scroll margin to ninety pixels, the height of the sticky header. Save, and the change applies immediately, without any restart. The configuration file survives module redeployments."
+    },
+    {
+      "id": "copy",
+      "title": "Copy a link in one click",
+      "narration": "Reload the page. The link now stops right below the header. Hover a heading, and a small hash button appears, with a Copy link tooltip. One click copies the full link to the section, and a short message confirms it. It also works with the keyboard: tab to the button, and press Enter."
+    },
+    {
+      "id": "languages",
+      "title": "Every language and script",
+      "narration": "The button and the messages follow the language of the page. Here is the French version, with Copier le lien. Anchors stay readable in every script. Cyrillic headings are transliterated, like content system names, and Chinese headings keep their characters."
+    },
+    {
+      "id": "existing",
+      "title": "Existing and duplicated ids",
+      "narration": "Ids that editors already typed are kept, and the button copies them. Two sections with the same title get unique anchors, with a numbered suffix. And manual anchors from older workarounds are left untouched, unless you ask the module to adopt them."
+    },
+    {
+      "id": "rename",
+      "title": "Anchors follow the heading text",
+      "narration": "Anchors are built from the heading text. Rename a heading, here Release cadence becomes Release schedule, and its anchor changes too, so older links to it stop working. When a link must stay stable, type a fixed id on the heading in the editor. The module keeps it as is."
+    },
+    {
+      "id": "safe",
+      "title": "Safe for every site",
+      "narration": "The module is designed to stay out of the way. It never changes the page layout, its styles only target what it adds, and it meets the WCAG 2.2 level AA accessibility requirements. And if you disable it on a site, the pages render exactly as before."
+    },
+    {
+      "id": "wrap-up",
+      "title": "Get Heading Anchors",
+      "narration": "Heading Anchors works with version 8.2.1 and later. Get it from the Store, and find the code and the documentation on GitHub. Thanks for watching."
+    }
+  ]
+}
