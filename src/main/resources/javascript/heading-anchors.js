@@ -55,7 +55,7 @@
     }
 
     document.addEventListener('click', function (event) {
-        var button = event.target.closest && event.target.closest('.heading-permalink');
+        var button = event.target.closest && event.target.closest('.heading-anchors-permalink');
         if (!button) {
             return;
         }

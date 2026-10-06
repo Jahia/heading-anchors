@@ -19,12 +19,14 @@ public final class HeadingAnchorSettings {
     private List<String> headings = List.of("h1", "h2", "h3", "h4", "h5");
     private List<ScopeSelector> scopes = List.of(ScopeSelector.parse("main"), ScopeSelector.parse("body"));
     private Mode mode = Mode.HEADING;
-    private String anchorClass = "heading-anchor";
+    private String anchorClass = "heading-anchors-target";
     private boolean anchorName;
+    private boolean anchorOnExistingId;
     private boolean permalinkEnabled;
-    private String permalinkLabel = "Copy link to section: {0}";
-    private String permalinkCopiedMessage = "Link copied to clipboard";
-    private String permalinkFallbackMessage = "Link is in the address bar";
+    // Empty: translated texts from the module resource bundle are used
+    private String permalinkLabel = "";
+    private String permalinkCopiedMessage = "";
+    private String permalinkFallbackMessage = "";
     private String scrollMarginTop = "";
 
     public List<String> getHeadings() {
@@ -69,6 +71,19 @@ public final class HeadingAnchorSettings {
 
     public HeadingAnchorSettings setAnchorName(boolean anchorName) {
         this.anchorName = anchorName;
+        return this;
+    }
+
+    public boolean isAnchorOnExistingId() {
+        return anchorOnExistingId;
+    }
+
+    /**
+     * @param anchorOnExistingId when a heading already has an id different from its slug, also add the slug
+     *                           with an empty anchor inside the heading (the permalink then uses the slug)
+     */
+    public HeadingAnchorSettings setAnchorOnExistingId(boolean anchorOnExistingId) {
+        this.anchorOnExistingId = anchorOnExistingId;
         return this;
     }
 

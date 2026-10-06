@@ -8,6 +8,7 @@ import net.htmlparser.jericho.StartTag;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -22,20 +23,26 @@ public class HeadingAnchorProcessor {
 
     static final String STATUS_ID = "heading-anchors-status";
     static final String WRAPPER_CLASS = "heading-anchors-wrap";
-    static final String PERMALINK_CLASS = "heading-permalink";
+    static final String PERMALINK_CLASS = "heading-anchors-permalink";
+    static final String TOAST_CLASS = "heading-anchors-toast";
+    /** Marks every element handled by the module: the stylesheet only targets marked or injected elements */
+    static final String MARKER_ATTRIBUTE = "data-heading-anchors";
 
     private static final String[] INTERACTIVE_TAGS = {"a", "button", "summary", "label"};
 
     private final HeadingAnchorSettings settings;
+    private final PermalinkMessages messages;
     private final String cssUrl;
     private final String jsUrl;
 
     /**
-     * @param cssUrl stylesheet injected in the head, or {@code null}
-     * @param jsUrl  script injected when a permalink button is added, or {@code null}
+     * @param messages texts of the permalink button and of the copy feedback, in the page language
+     * @param cssUrl   stylesheet injected in the head, or {@code null}
+     * @param jsUrl    script injected when a permalink button is added, or {@code null}
      */
-    public HeadingAnchorProcessor(HeadingAnchorSettings settings, String cssUrl, String jsUrl) {
+    public HeadingAnchorProcessor(HeadingAnchorSettings settings, PermalinkMessages messages, String cssUrl, String jsUrl) {
         this.settings = settings;
+        this.messages = messages;
         this.cssUrl = cssUrl;
         this.jsUrl = jsUrl;
     }
@@ -54,7 +61,8 @@ public class HeadingAnchorProcessor {
             return html;
         }
 
-        Set<String> usedIds = collectIds(source);
+        Map<String, Integer> firstIdPositions = collectIds(source);
+        Set<String> usedIds = new HashSet<>(firstIdPositions.keySet());
         List<Element> interactiveElements = collectInteractiveElements(source);
         OutputDocument out = new OutputDocument(source);
         boolean permalinkAdded = false;
@@ -66,13 +74,28 @@ public class HeadingAnchorProcessor {
             String targetId;
 
             if (settings.getMode() == HeadingAnchorSettings.Mode.ANCHOR) {
+                // Anchor mode: the heading is never modified
                 targetId = SlugGenerator.unique(SlugGenerator.slugify(text), usedIds);
                 out.insert(startTag.getEnd(), anchorMarkup(targetId));
-            } else if (existingId != null) {
-                targetId = existingId;
             } else {
-                targetId = SlugGenerator.unique(SlugGenerator.slugify(text), usedIds);
-                out.insert(startTag.getBegin() + 1 + startTag.getName().length(), " id=\"" + targetId + "\"");
+                int attributesPosition = startTag.getBegin() + 1 + startTag.getName().length();
+                String slug = SlugGenerator.slugify(text);
+                if (existingId == null) {
+                    targetId = SlugGenerator.unique(slug, usedIds);
+                    out.insert(attributesPosition, " id=\"" + targetId + "\" " + MARKER_ATTRIBUTE);
+                } else if (isUsable(existingId, startTag, firstIdPositions)
+                        && (existingId.equals(slug) || !settings.isAnchorOnExistingId())) {
+                    // The existing id (often typed by the editor) is kept and used by the permalink
+                    targetId = existingId;
+                    out.insert(attributesPosition, " " + MARKER_ATTRIBUTE);
+                } else {
+                    // The existing id may be used by the site (CSS, scripts, links): it is kept, and a unique slug is
+                    // added with an empty anchor inside the heading, so the fragment target stays the heading.
+                    // Also used when the existing id is a duplicate: a link to it would reach an earlier element
+                    targetId = SlugGenerator.unique(slug, usedIds);
+                    out.insert(attributesPosition, " " + MARKER_ATTRIBUTE);
+                    out.insert(startTag.getEnd(), anchorMarkup(targetId));
+                }
             }
 
             EndTag endTag = heading.getEndTag();
@@ -115,15 +138,25 @@ public class HeadingAnchorProcessor {
         return headings;
     }
 
-    private static Set<String> collectIds(Source source) {
-        Set<String> ids = new HashSet<>();
+    /**
+     * @return every id of the page, with the position of the first element that has it
+     */
+    private static Map<String, Integer> collectIds(Source source) {
+        Map<String, Integer> ids = new HashMap<>();
         for (StartTag tag : source.getAllStartTags()) {
             String id = trimToNull(tag.getAttributeValue("id"));
             if (id != null) {
-                ids.add(id);
+                ids.putIfAbsent(id, tag.getBegin());
             }
         }
         return ids;
+    }
+
+    /**
+     * An id is usable as a fragment target only if this heading is the first element of the page having it.
+     */
+    private static boolean isUsable(String id, StartTag startTag, Map<String, Integer> firstIdPositions) {
+        return firstIdPositions.get(id) == startTag.getBegin();
     }
 
     private static List<Element> collectInteractiveElements(Source source) {
@@ -144,7 +177,7 @@ public class HeadingAnchorProcessor {
     }
 
     private String anchorMarkup(String id) {
-        StringBuilder sb = new StringBuilder("<a id=\"").append(id).append('"');
+        StringBuilder sb = new StringBuilder("<a id=\"").append(id).append("\" ").append(MARKER_ATTRIBUTE);
         if (settings.isAnchorName()) {
             sb.append(" name=\"").append(id).append('"');
         }
@@ -155,7 +188,7 @@ public class HeadingAnchorProcessor {
     }
 
     private String permalinkMarkup(String id, String headingText) {
-        String label = settings.getPermalinkLabel().replace("{0}", headingText);
+        String label = messages.getLabel(headingText);
         return "<button type=\"button\" class=\"" + PERMALINK_CLASS + "\" data-target=\"" + escape(id) + "\""
                 + " aria-label=\"" + escape(label) + "\"><span aria-hidden=\"true\">#</span></button>";
     }
@@ -177,9 +210,9 @@ public class HeadingAnchorProcessor {
         Element body = source.getFirstElement("body");
         if (permalinkAdded && body != null && body.getEndTag() != null) {
             StringBuilder bodyAssets = new StringBuilder();
-            bodyAssets.append("<div id=\"").append(STATUS_ID).append("\" role=\"status\" class=\"heading-anchors-toast\"")
-                    .append(" data-copied-message=\"").append(escape(settings.getPermalinkCopiedMessage())).append('"')
-                    .append(" data-fallback-message=\"").append(escape(settings.getPermalinkFallbackMessage())).append("\"></div>");
+            bodyAssets.append("<div id=\"").append(STATUS_ID).append("\" role=\"status\" class=\"").append(TOAST_CLASS).append('"')
+                    .append(" data-copied-message=\"").append(escape(messages.getCopied())).append('"')
+                    .append(" data-fallback-message=\"").append(escape(messages.getFallback())).append("\"></div>");
             if (jsUrl != null) {
                 bodyAssets.append("<script src=\"").append(escape(jsUrl)).append("\" defer></script>");
             }

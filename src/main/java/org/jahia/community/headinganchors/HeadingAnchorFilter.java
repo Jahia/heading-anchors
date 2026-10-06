@@ -89,6 +89,7 @@ public class HeadingAnchorFilter extends AbstractFilter {
                 .setMode(mode)
                 .setAnchorClass(config.anchor_class())
                 .setAnchorName(config.anchor_name())
+                .setAnchorOnExistingId("anchor".equalsIgnoreCase(config.existingId().trim()))
                 .setPermalinkEnabled(config.permalink_enabled())
                 .setPermalinkLabel(config.permalink_label())
                 .setPermalinkCopiedMessage(config.permalink_copiedMessage())
@@ -114,7 +115,9 @@ public class HeadingAnchorFilter extends AbstractFilter {
 
         String moduleUrl = renderContext.getRequest().getContextPath() + MODULE_PATH;
         try {
-            return new HeadingAnchorProcessor(settings, moduleUrl + "/css/heading-anchors.css",
+            HeadingAnchorSettings current = settings;
+            PermalinkMessages messages = PermalinkMessages.forLocale(renderContext.getMainResourceLocale(), current);
+            return new HeadingAnchorProcessor(current, messages, moduleUrl + "/css/heading-anchors.css",
                     moduleUrl + "/javascript/heading-anchors.js").process(previousOut);
         } catch (RuntimeException e) {
             // Never break page rendering because of anchors

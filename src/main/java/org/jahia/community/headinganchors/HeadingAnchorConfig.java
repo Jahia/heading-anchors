@@ -26,8 +26,12 @@ public @interface HeadingAnchorConfig {
     @AttributeDefinition(description = "heading: id on the heading (existing id kept); anchor: empty <a id> inserted in the heading")
     String mode() default "heading";
 
-    @AttributeDefinition(description = "CSS class of the injected <a> in anchor mode")
-    String anchor_class() default "heading-anchor";
+    @AttributeDefinition(description = "Heading mode, heading with an id different from its slug. keep: the id is kept "
+            + "and used by the permalink; anchor: the id is kept and the slug is added with an empty <a> in the heading")
+    String existingId() default "keep";
+
+    @AttributeDefinition(description = "CSS class of the injected <a>")
+    String anchor_class() default "heading-anchors-target";
 
     @AttributeDefinition(description = "Also set the legacy name attribute on the injected <a> in anchor mode")
     boolean anchor_name() default false;
@@ -35,14 +39,15 @@ public @interface HeadingAnchorConfig {
     @AttributeDefinition(description = "Add a copy-permalink button next to each heading")
     boolean permalink_enabled() default false;
 
-    @AttributeDefinition(description = "Accessible label of the permalink button, {0} is replaced by the heading text")
-    String permalink_label() default "Copy link to section: {0}";
+    @AttributeDefinition(description = "Accessible label of the permalink button, {0} is replaced by the heading text. "
+            + "Empty: translated in the page language (en, fr, de). A value overrides it for every language.")
+    String permalink_label() default "";
 
-    @AttributeDefinition(description = "Message announced when the link is copied")
-    String permalink_copiedMessage() default "Link copied to clipboard";
+    @AttributeDefinition(description = "Message shown when the link is copied. Empty: translated in the page language.")
+    String permalink_copiedMessage() default "";
 
-    @AttributeDefinition(description = "Message announced when the clipboard is not available")
-    String permalink_fallbackMessage() default "Link is in the address bar";
+    @AttributeDefinition(description = "Message shown when the clipboard is not available. Empty: translated in the page language.")
+    String permalink_fallbackMessage() default "";
 
     @AttributeDefinition(description = "scroll-margin-top applied to anchored headings, e.g. 120px or 6rem; empty keeps the CSS default")
     String scrollMarginTop() default "";
