@@ -1,43 +1,61 @@
-# Tests
-Two options are available to run the tests, you can either run everything in Docker or only run Jahia in Docker and run the tests using your local node.
+# End-to-end tests
 
-### Run all in Docker
+Cypress tests of the module against a real Jahia, run in Docker with the
+[`@jahia/cypress`](https://github.com/Jahia/jahia-cypress) harness. The provisioning imports the Digitall demo site,
+then installs the module built in `../target`. The spec `cypress/e2e/01-headingAnchors.cy.ts` creates a test page
+under the Digitall home page, changes the module configuration through the provisioning API, and checks the
+rendered pages in preview and live (ids, permalink button, toast, translations, WCAG 2.2 AA with axe-core, isolation
+from the site styles).
 
-Once you have a built test container, the entirety of the tests, from environment provisioning to report generation, can be executed using a single command.
+## Prerequisites
 
-```bash
-# Build the test container
-> bash ci.build.sh
-# Execute the tests
-> bash ci.startup.sh
-```
+- Docker, with about 10 GB of free disk space for the images
+- the module built: `mvn clean install` in the parent folder
+- a Jahia license, base64-encoded
 
-This is this exact process that will be used by the CI platform to execute the tests. And although it's definitely the easiest way of going through one run, it's also the method you're the less likely to use on a day-to-day (that would have been too easy, isn't it ?). 
+## Environment
 
-The primary reason for this method to be "somewhat" reserved to the CI platform, is that it doesn't make it easy to develop new tests or debug one single test.
-
-IMPORTANT: If you are using this method locally, do not forget that you will need to **rebuilt the test container** (`bash ci.build.sh`) for everytime a change is done in the `tests/` folder, otherwise your change will not make their way to the container.
-
-### Run the tests on a local node
-
-This is the method you will be using the most when developing or debug tests, and the major point of attention here concerns the use of the `env.run.sh` script.
-
-As a reminder, the purpose of the `env.run.sh` script is to provision the environment **AND** execute the tests, in most cases you'd want to provision the environment only once, but run the tests multiple times.
+`set-env.sh` loads **either** `tests/.env` **or** `tests/.env.example`, never both. To run the tests locally, create
+`tests/.env` (git-ignored) with all the variables of `.env.example` and your license:
 
 ```bash
-# Fetch the necessary javascript dependencies
-> yarn
-# Run the docker environment, but without the tests
-> ./ci.startup.sh notests
-# Provision the environment and run the tests in headless once
-> ./env.run.sh
-# For bash
-> ./set-env.sh
-> yarn run e2e:debug
+sed '/^JAHIA_LICENSE=/d' .env.example > .env && echo "JAHIA_LICENSE=$(base64 -i /path/to/license.xml | tr -d '\n')" >> .env
 ```
 
-The advantage of this approach is that you'll get to run the tests in headless once, and although it delays a bit the time by which you can start developing, it also give you a good sense of whether your environment is setup properly.
+| Variable | Description |
+|---|---|
+| `JAHIA_IMAGE` | Jahia image, e.g. `ghcr.io/jahia/jahia-ee-dev:8.2.3.2` |
+| `TESTS_IMAGE` | Name of the local Cypress image built by `ci.build.sh` (`jahia/heading-anchors:latest`) |
+| `MODULE_ID` | Module checked before running the tests (`heading-anchors`) |
+| `JAHIA_LICENSE` | Jahia license, base64-encoded |
+| `SUPER_USER_PASSWORD` | Password of the `root` user of the test Jahia |
 
-Do *NOT* forget to load your environment variables using `source set-env.sh` prior to running Cypress, as well as **everytime you open a new terminal**.
+## Run everything in Docker
 
-In most situations you will end-up with a lot of unit tests, slightly less API e2e, and fewer UI e2e. Note that the purpose of these tests is to validate the proper behavior/operation of the module being developed. It would likely still be necessary to implement various high level integration tests to ensure your module operate well with other in different "real-life" deployment scenarios (but those tests are typically executed after merging of the code).
+The same process as a CI run: Jahia starts, the environment is provisioned, then the tests run.
+
+```bash
+bash ci.build.sh
+bash ci.startup.sh
+```
+
+`ci.build.sh` builds the test image and copies the module jar: run it again after any change in `tests/` or in the
+module. Results (mochawesome and JUnit reports, screenshots of failures, videos of failed specs) are in `results/`.
+
+## Rerun the spec against the running Jahia
+
+After a first `ci.startup.sh`, Jahia keeps running. To test a new build of the module without restarting:
+
+```bash
+source ./set-env.sh
+printf -- "- installBundle: 'heading-anchors-1.0.0-SNAPSHOT.jar'\n  autoStart: true\n  uninstallPreviousVersion: true\n" > /tmp/install.yml
+curl -u "root:$SUPER_USER_PASSWORD" -X POST http://localhost:8080/modules/api/provisioning \
+  -F "script=@/tmp/install.yml;type=application/yaml" -F "file=@../target/heading-anchors-1.0.0-SNAPSHOT.jar"
+docker run --rm --network tests_stack -e CYPRESS_BASE_URL=http://jahia:8080 -e JAHIA_URL=http://jahia:8080 \
+  -e SUPER_USER_PASSWORD -v "$PWD/cypress:/home/jahians/cypress" -v "$PWD/results:/home/jahians/results" \
+  "$TESTS_IMAGE" yarn e2e:ci --spec cypress/e2e/01-headingAnchors.cy.ts
+```
+
+Lint the specs with `docker run --rm -v "$PWD/cypress:/home/jahians/cypress" "$TESTS_IMAGE" yarn lint`.
+
+Stop the stack with `docker compose down`.

@@ -64,15 +64,8 @@ public class HeadingAnchorFilter extends AbstractFilter {
             }
         }
 
-        List<String> headings = new ArrayList<>();
-        for (String tag : split(config.headings())) {
-            String normalized = tag.toLowerCase(Locale.ROOT);
-            if (HEADING_TAG.matcher(normalized).matches()) {
-                headings.add(normalized);
-            } else {
-                logger.warn("Ignoring unsupported heading tag '{}'", tag);
-            }
-        }
+        List<String> headings = headingTags(config.headings());
+        List<String> permalinkHeadings = headingTags(config.permalink_headings());
 
         String scrollMarginTop = config.scrollMarginTop() == null ? "" : config.scrollMarginTop().trim();
         if (!scrollMarginTop.isEmpty() && !CSS_LENGTH.matcher(scrollMarginTop).matches()) {
@@ -90,6 +83,8 @@ public class HeadingAnchorFilter extends AbstractFilter {
                 .setAnchorClass(config.anchor_class())
                 .setAnchorName(config.anchor_name())
                 .setAnchorOnExistingId("anchor".equalsIgnoreCase(config.existingId().trim()))
+                .setAdoptLegacyAnchors("adopt".equalsIgnoreCase(config.legacyAnchors().trim()))
+                .setPermalinkHeadings(permalinkHeadings)
                 .setPermalinkEnabled(config.permalink_enabled())
                 .setPermalinkLabel(config.permalink_label())
                 .setPermalinkCopiedMessage(config.permalink_copiedMessage())
@@ -117,8 +112,13 @@ public class HeadingAnchorFilter extends AbstractFilter {
         try {
             HeadingAnchorSettings current = settings;
             PermalinkMessages messages = PermalinkMessages.forLocale(renderContext.getMainResourceLocale(), current);
-            return new HeadingAnchorProcessor(current, messages, moduleUrl + "/css/heading-anchors.css",
-                    moduleUrl + "/javascript/heading-anchors.js").process(previousOut);
+            HeadingAnchorProcessor processor = new HeadingAnchorProcessor(current, messages,
+                    moduleUrl + "/css/heading-anchors.css", moduleUrl + "/javascript/heading-anchors.js");
+            String out = processor.process(previousOut);
+            if (logger.isDebugEnabled()) {
+                processor.getNotices().forEach(notice -> logger.debug("{}: {}", resource.getPath(), notice));
+            }
+            return out;
         } catch (RuntimeException e) {
             // Never break page rendering because of anchors
             logger.warn("Unable to add heading anchors on {}: {}", resource.getPath(), e.getMessage());
@@ -133,6 +133,19 @@ public class HeadingAnchorFilter extends AbstractFilter {
      */
     static boolean isEnabledOnSite(JCRSiteNode site) {
         return site != null && site.getInstalledModules().contains(MODULE_ID);
+    }
+
+    private static List<String> headingTags(String value) {
+        List<String> tags = new ArrayList<>();
+        for (String tag : split(value)) {
+            String normalized = tag.toLowerCase(Locale.ROOT);
+            if (HEADING_TAG.matcher(normalized).matches()) {
+                tags.add(normalized);
+            } else {
+                logger.warn("Ignoring unsupported heading tag '{}'", tag);
+            }
+        }
+        return tags;
     }
 
     private static List<String> split(String value) {

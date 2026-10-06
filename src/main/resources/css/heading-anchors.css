@@ -4,8 +4,9 @@
  * - every selector targets an element injected or marked by the module (data-heading-anchors attribute,
  *   heading-anchors-* classes, #heading-anchors-status), never a site element
  * - injected elements start from "all: unset" with a strong selector and !important declarations, so site
- *   rules (button, div, span..., even with !important) cannot change their look or behavior. Theming is done
+ *   rules (button, div..., even with !important) cannot change their look or behavior. Theming is done
  *   with the --heading-anchors-* custom properties
+ * - the page structure is never changed: the permalink button is the last child of its heading
  */
 
 /* Keeps anchored headings visible below sticky headers; override --heading-anchors-scroll-margin in the theme */
@@ -13,69 +14,96 @@
     scroll-margin-top: var(--heading-anchors-scroll-margin, 1rem);
 }
 
-/* Permalink: heading and button side by side */
-div.heading-anchors-wrap.heading-anchors-wrap {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: baseline !important;
-    gap: 0.25rem !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: none !important;
-}
-
-div.heading-anchors-wrap.heading-anchors-wrap > [data-heading-anchors] {
-    min-width: 0 !important;
-}
-
-div.heading-anchors-wrap > button.heading-anchors-permalink.heading-anchors-permalink {
+/* Permalink button, inside the heading: inherits its color, sized relative to its font */
+:is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink {
     all: unset !important;
     box-sizing: border-box !important;
     display: inline-flex !important;
-    flex: none !important;
+    position: relative !important;
     align-items: center !important;
     justify-content: center !important;
     /* WCAG 2.5.8: 24x24 CSS px minimum target */
     min-width: 24px !important;
     min-height: 24px !important;
-    padding: 0 0.25rem !important;
+    margin-inline-start: 0.35em !important;
+    /* Negative block margins: the 24px target never makes the line taller, so the heading height is unchanged */
+    margin-block: -12px !important;
+    padding: 0 0.15em !important;
+    vertical-align: middle !important;
     border-radius: 4px !important;
     color: inherit !important;
-    font: inherit !important;
+    font-family: inherit !important;
+    font-size: 0.75em !important;
+    font-weight: inherit !important;
+    font-style: normal !important;
     line-height: 1 !important;
+    text-decoration: none !important;
     cursor: pointer !important;
     opacity: 0 !important;
     transition: opacity 0.15s ease-in-out !important;
 }
 
-div.heading-anchors-wrap > button.heading-anchors-permalink.heading-anchors-permalink > span {
-    all: unset !important;
+/* The glyph is generated content: not part of the heading text read by table of contents scripts.
+   The second declaration gives it an empty alternative text where supported */
+:is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink::before {
+    content: "#" !important;
+    content: "#" / "" !important;
 }
 
 /* Never display:none / visibility:hidden: the button must stay reachable by keyboard (WCAG 2.1.1, 2.4.7) */
-div.heading-anchors-wrap.heading-anchors-wrap:hover > button.heading-anchors-permalink.heading-anchors-permalink,
-div.heading-anchors-wrap > button.heading-anchors-permalink.heading-anchors-permalink:hover,
-div.heading-anchors-wrap > button.heading-anchors-permalink.heading-anchors-permalink:focus-visible {
+:is(h1, h2, h3, h4, h5, h6):hover > button.heading-anchors-permalink.heading-anchors-permalink,
+:is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink:focus-visible {
     opacity: 1 !important;
 }
 
 /* WCAG 2.4.7 / 1.4.11: visible focus indicator with the text color */
-div.heading-anchors-wrap > button.heading-anchors-permalink.heading-anchors-permalink:focus-visible {
+:is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink:focus-visible {
     outline: 2px solid currentColor !important;
     outline-offset: 2px !important;
 }
 
+/* Tooltip showing the accessible name (WCAG 2.5.3). Shown on hover and keyboard focus, stays while the pointer
+   is over it (it is part of the button), dismissed with Escape (WCAG 1.4.13, "is-dismissed" set by the script) */
+:is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink::after {
+    content: attr(aria-label) !important;
+    content: attr(aria-label) / "" !important;
+    display: none !important;
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 50% !important;
+    z-index: 1000 !important;
+    transform: translateX(-50%) !important;
+    padding: 0.35rem 0.6rem !important;
+    border-radius: 4px !important;
+    background: var(--heading-anchors-toast-background, #1f1f1f) !important;
+    color: var(--heading-anchors-toast-color, #fff) !important;
+    font-size: var(--heading-anchors-tooltip-font-size, 0.875rem) !important;
+    font-weight: normal !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+:is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink:is(:hover, :focus-visible):not(.is-dismissed)::after {
+    display: block !important;
+}
+
 /* Touch devices have no hover */
 @media (hover: none) {
-    div.heading-anchors-wrap > button.heading-anchors-permalink.heading-anchors-permalink {
+    :is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink {
         opacity: 1 !important;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    div.heading-anchors-wrap > button.heading-anchors-permalink.heading-anchors-permalink {
+    :is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink {
         transition: none !important;
+    }
+}
+
+@media (forced-colors: active) {
+    :is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink::after {
+        border: 1px solid CanvasText !important;
     }
 }
 

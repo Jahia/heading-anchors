@@ -22,6 +22,8 @@ public final class HeadingAnchorSettings {
     private String anchorClass = "heading-anchors-target";
     private boolean anchorName;
     private boolean anchorOnExistingId;
+    private boolean adoptLegacyAnchors;
+    private List<String> permalinkHeadings = List.of("h2", "h3", "h4", "h5");
     private boolean permalinkEnabled;
     // Empty: translated texts from the module resource bundle are used
     private String permalinkLabel = "";
@@ -84,6 +86,30 @@ public final class HeadingAnchorSettings {
      */
     public HeadingAnchorSettings setAnchorOnExistingId(boolean anchorOnExistingId) {
         this.anchorOnExistingId = anchorOnExistingId;
+        return this;
+    }
+
+    public boolean isAdoptLegacyAnchors() {
+        return adoptLegacyAnchors;
+    }
+
+    /**
+     * @param adoptLegacyAnchors give the slug to the heading and remove it from a manual anchor of its section
+     */
+    public HeadingAnchorSettings setAdoptLegacyAnchors(boolean adoptLegacyAnchors) {
+        this.adoptLegacyAnchors = adoptLegacyAnchors;
+        return this;
+    }
+
+    public List<String> getPermalinkHeadings() {
+        return permalinkHeadings;
+    }
+
+    /**
+     * @param permalinkHeadings heading tags getting a permalink button (h1, the page title, is excluded by default)
+     */
+    public HeadingAnchorSettings setPermalinkHeadings(List<String> permalinkHeadings) {
+        this.permalinkHeadings = Collections.unmodifiableList(new ArrayList<>(permalinkHeadings));
         return this;
     }
 

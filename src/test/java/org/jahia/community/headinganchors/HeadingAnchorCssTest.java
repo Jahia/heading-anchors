@@ -36,11 +36,31 @@ class HeadingAnchorCssTest {
         while (matcher.find()) {
             String prelude = matcher.group(1).trim();
             if (!prelude.startsWith("@")) {
-                for (String selector : prelude.split(",")) {
-                    selectors.add(selector.trim());
-                }
+                selectors.addAll(splitTopLevel(prelude));
             }
         }
+        return selectors;
+    }
+
+    /**
+     * Splits a selector list on its top-level commas only: ":is(h1, h2) > button" is a single selector.
+     */
+    private static List<String> splitTopLevel(String selectorList) {
+        List<String> selectors = new ArrayList<>();
+        int depth = 0;
+        int start = 0;
+        for (int i = 0; i < selectorList.length(); i++) {
+            char c = selectorList.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+            } else if (c == ',' && depth == 0) {
+                selectors.add(selectorList.substring(start, i).trim());
+                start = i + 1;
+            }
+        }
+        selectors.add(selectorList.substring(start).trim());
         return selectors;
     }
 
@@ -50,15 +70,12 @@ class HeadingAnchorCssTest {
 
         assertThat(selectors).isNotEmpty();
         for (String selector : selectors) {
-            // The subject of the selector (its last compound) must be a module element
-            String[] compounds = selector.split("\\s*[>+~\\s]\\s*");
+            // The subject of the selector (its last compound, after the last combinator outside parentheses)
+            // must be a module element
+            String withoutGroups = selector.replaceAll("\\([^()]*\\)", "()");
+            String[] compounds = withoutGroups.split("\\s*[>+~\\s]\\s*");
             String subject = compounds[compounds.length - 1];
-            if (subject.equals("span")) {
-                // Only allowed as a direct child of the module button
-                assertThat(selector).as(selector).contains("button.heading-anchors-permalink.heading-anchors-permalink > span");
-            } else {
-                assertThat(MODULE_HOOK.matcher(subject).find()).as("selector subject must be a module element: " + selector).isTrue();
-            }
+            assertThat(MODULE_HOOK.matcher(subject).find()).as("selector subject must be a module element: " + selector).isTrue();
         }
     }
 
@@ -66,7 +83,7 @@ class HeadingAnchorCssTest {
     void injectedElementsAreResetAgainstSiteStyles() throws IOException {
         String css = css();
 
-        assertThat(css).contains("div.heading-anchors-wrap > button.heading-anchors-permalink.heading-anchors-permalink {\n    all: unset !important;")
+        assertThat(css).contains(":is(h1, h2, h3, h4, h5, h6) > button.heading-anchors-permalink.heading-anchors-permalink {\n    all: unset !important;")
                 .contains("div#heading-anchors-status.heading-anchors-toast {\n    all: unset !important;");
     }
 

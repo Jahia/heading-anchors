@@ -13,11 +13,12 @@ class PermalinkMessagesTest {
     @Test
     void usesThePageLanguage() {
         PermalinkMessages fr = PermalinkMessages.forLocale(Locale.FRENCH, new HeadingAnchorSettings());
-        assertThat(fr.getLabel("Cycle de vie")).isEqualTo("Copier le lien vers la section : Cycle de vie");
+        assertThat(fr.getLabel("Cycle de vie")).isEqualTo("Copier le lien");
         assertThat(fr.getCopied()).isEqualTo("Lien copié dans le presse-papiers");
         assertThat(fr.getFallback()).isEqualTo("Le lien est dans la barre d'adresse");
 
         PermalinkMessages de = PermalinkMessages.forLocale(Locale.GERMANY, new HeadingAnchorSettings());
+        assertThat(de.getLabel("Lebenszyklus")).isEqualTo("Link kopieren");
         assertThat(de.getCopied()).isEqualTo("Link in die Zwischenablage kopiert");
     }
 
@@ -27,7 +28,7 @@ class PermalinkMessagesTest {
         try {
             Locale.setDefault(Locale.FRENCH);
             PermalinkMessages ja = PermalinkMessages.forLocale(Locale.JAPANESE, new HeadingAnchorSettings());
-            assertThat(ja.getLabel("Intro")).isEqualTo("Copy link to section: Intro");
+            assertThat(ja.getLabel("Intro")).isEqualTo("Copy link");
             assertThat(PermalinkMessages.forLocale(null, new HeadingAnchorSettings()).getCopied()).isEqualTo("Link copied to clipboard");
         } finally {
             Locale.setDefault(previous);

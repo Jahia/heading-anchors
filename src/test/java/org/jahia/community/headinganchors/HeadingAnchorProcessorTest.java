@@ -69,8 +69,7 @@ class HeadingAnchorProcessorTest {
 
         String out = process(settings, page("<main><h2 id=\"lifecycle\">Jahia lifecycle</h2></main>"));
 
-        assertThat(out).contains("<h2" + M + " id=\"lifecycle\">Jahia lifecycle</h2>")
-                .contains("data-target=\"lifecycle\"")
+        assertThat(out).contains("<h2" + M + " id=\"lifecycle\">Jahia lifecycle<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"lifecycle\" aria-label=\"Copy link\"></button></h2>")
                 .doesNotContain("heading-anchors-target");
     }
 
@@ -81,10 +80,9 @@ class HeadingAnchorProcessorTest {
         String out = process(settings, page("<main><h2 id=\"lifecycle\">Jahia lifecycle</h2><h2 id=\"faq\">FAQ</h2></main>"));
 
         assertThat(out).contains("<h2" + M + " id=\"lifecycle\"><a id=\"jahia-lifecycle\"" + M
-                        + " class=\"heading-anchors-target\"></a>Jahia lifecycle</h2>")
-                .contains("data-target=\"jahia-lifecycle\"")
+                        + " class=\"heading-anchors-target\"></a>Jahia lifecycle<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"jahia-lifecycle\" aria-label=\"Copy link\"></button></h2>")
                 // Same as the slug: nothing to add
-                .contains("<h2" + M + " id=\"faq\">FAQ</h2>");
+                .contains("<h2" + M + " id=\"faq\">FAQ<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"faq\" aria-label=\"Copy link\"></button></h2>");
     }
 
     @Test
@@ -94,9 +92,9 @@ class HeadingAnchorProcessorTest {
         String out = process(settings, page("<main><h2 id=\"faq\">FAQ</h2><h2 id=\"faq\">FAQ</h2></main>"));
 
         // The first heading keeps its id; the second one cannot be reached with it, it gets its own anchor
-        assertThat(out).contains("<h2" + M + " id=\"faq\">FAQ</h2><button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"faq\"")
-                .contains("<h2" + M + " id=\"faq\"><a id=\"faq_1\"" + M + " class=\"heading-anchors-target\"></a>FAQ</h2>"
-                        + "<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"faq_1\"");
+        assertThat(out).contains("<h2" + M + " id=\"faq\">FAQ<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"faq\" aria-label=\"Copy link\"></button></h2>")
+                .contains("<h2" + M + " id=\"faq\"><a id=\"faq_1\"" + M + " class=\"heading-anchors-target\"></a>FAQ"
+                        + "<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"faq_1\" aria-label=\"Copy link\"></button></h2>");
     }
 
     @Test
@@ -139,12 +137,73 @@ class HeadingAnchorProcessorTest {
 
         String out = process(settings, page("<main><h2>Say \"hi\"</h2></main>"));
 
-        assertThat(out).contains("<div class=\"heading-anchors-wrap\"><h2 id=\"say-hi\"" + M + ">Say \"hi\"</h2>"
-                        + "<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"say-hi\""
-                        + " aria-label=\"Copy link to section: Say &quot;hi&quot;\"><span aria-hidden=\"true\">#</span></button></div>")
+        // Last child of the heading, no wrapper: the page structure is unchanged
+        assertThat(out).contains("<h2 id=\"say-hi\"" + M + ">Say \"hi\"<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"say-hi\" aria-label=\"Copy link\"></button></h2>")
+                .doesNotContain("heading-anchors-wrap")
                 .contains("<div id=\"heading-anchors-status\" role=\"status\" class=\"heading-anchors-toast\""
                         + " data-copied-message=\"Link copied to clipboard\" data-fallback-message=\"Link is in the address bar\"></div>")
                 .contains("<script src=\"" + JS + "\" defer></script></body>");
+    }
+
+    @Test
+    void escapesAConfiguredLabelWithTheHeadingText() {
+        HeadingAnchorSettings settings = new HeadingAnchorSettings().setPermalinkEnabled(true).setPermalinkLabel("Link to {0}");
+
+        String out = process(settings, page("<main><h2>Say \"hi\"</h2></main>"));
+
+        assertThat(out).contains("aria-label=\"Link to Say &quot;hi&quot;\"");
+    }
+
+    @Test
+    void addsNoPermalinkOnHeadingLevelsNotConfiguredForIt() {
+        HeadingAnchorSettings settings = new HeadingAnchorSettings().setPermalinkEnabled(true);
+
+        String out = process(settings, page("<main><h1>Page title</h1><h2>Section</h2></main>"));
+
+        // h1 (the page title) gets an id but no button by default
+        assertThat(out).contains("<h1 id=\"page-title\"" + M + ">Page title</h1>")
+                .contains("<h2 id=\"section\"" + M + ">Section<button type=\"button\" class=\"heading-anchors-permalink\" data-target=\"section\" aria-label=\"Copy link\"></button></h2>");
+    }
+
+    @Test
+    void keepsAManualAnchorOfTheSectionByDefault() {
+        HeadingAnchorProcessor processor = new HeadingAnchorProcessor(new HeadingAnchorSettings(),
+                PermalinkMessages.forLocale(Locale.ENGLISH, new HeadingAnchorSettings()), CSS, JS);
+
+        String out = processor.process(page("<main><h3>Jahia lifecycle</h3>"
+                + "<p><a id=\"jahia-lifecycle\" name=\"jahia-lifecycle\"></a>Text</p></main>"));
+
+        assertThat(out).contains("<h3 id=\"jahia-lifecycle_1\"" + M + ">Jahia lifecycle</h3>")
+                .contains("<a id=\"jahia-lifecycle\" name=\"jahia-lifecycle\"></a>");
+        assertThat(processor.getNotices()).containsExactly(
+                "Manual anchor 'jahia-lifecycle' kept below its heading, which gets 'jahia-lifecycle_1'");
+    }
+
+    @Test
+    void adoptsAManualAnchorOfTheSectionWhenConfigured() {
+        HeadingAnchorSettings settings = new HeadingAnchorSettings().setAdoptLegacyAnchors(true);
+
+        String out = process(settings, page("<main><h3>Jahia lifecycle</h3>"
+                + "<p><a id=\"jahia-lifecycle\" name=\"jahia-lifecycle\"></a>Text</p>"
+                + "<h3>Other</h3><p><a id=\"other-anchor\"></a></p></main>"));
+
+        assertThat(out).contains("<h3 id=\"jahia-lifecycle\"" + M + ">Jahia lifecycle</h3>")
+                .doesNotContain("id=\"jahia-lifecycle_1\"")
+                .doesNotContain("name=\"jahia-lifecycle\"")
+                // Unrelated manual anchors are untouched
+                .contains("<a id=\"other-anchor\"></a>");
+    }
+
+    @Test
+    void neverAdoptsAnAnchorOutsideTheSectionOrALink() {
+        HeadingAnchorSettings settings = new HeadingAnchorSettings().setAdoptLegacyAnchors(true);
+
+        String out = process(settings, page("<main><p><a id=\"intro\"></a></p><h2>Intro</h2>"
+                + "<h2>Next</h2><p><a id=\"next\" href=\"#x\"></a></p></main>"));
+
+        // Anchor before the heading, and anchor with href: kept, the headings get suffixed slugs
+        assertThat(out).contains("<a id=\"intro\"></a>").contains("<h2 id=\"intro_1\"" + M + ">Intro</h2>")
+                .contains("<a id=\"next\" href=\"#x\"></a>").contains("<h2 id=\"next_1\"" + M + ">Next</h2>");
     }
 
     @Test
