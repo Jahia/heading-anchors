@@ -231,6 +231,14 @@ describe('Heading anchors', () => {
             cy.get('#jahia-lifecycle + .heading-permalink').click();
             cy.get('@writeText').should('have.been.calledOnceWith', `${Cypress.config('baseUrl')}${previewUrl}#jahia-lifecycle`);
             cy.get('#heading-anchors-status').should('have.text', 'Link copied to clipboard');
+            // Visible toast, which never blocks clicks and disappears by itself
+            cy.get('#heading-anchors-status')
+                .should('have.class', 'is-visible')
+                .and('have.css', 'opacity', '1')
+                .and('have.css', 'position', 'fixed')
+                .and('have.css', 'pointer-events', 'none');
+            cy.get('#heading-anchors-status', {timeout: 8000}).should('not.have.class', 'is-visible');
+            cy.get('#heading-anchors-status').should('have.text', '');
         });
 
         it('puts the URL in the address bar when the clipboard is not available', () => {

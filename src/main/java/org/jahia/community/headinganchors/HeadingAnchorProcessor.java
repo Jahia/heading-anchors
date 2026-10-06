@@ -177,7 +177,7 @@ public class HeadingAnchorProcessor {
         Element body = source.getFirstElement("body");
         if (permalinkAdded && body != null && body.getEndTag() != null) {
             StringBuilder bodyAssets = new StringBuilder();
-            bodyAssets.append("<div id=\"").append(STATUS_ID).append("\" role=\"status\" class=\"heading-anchors-sr-only\"")
+            bodyAssets.append("<div id=\"").append(STATUS_ID).append("\" role=\"status\" class=\"heading-anchors-toast\"")
                     .append(" data-copied-message=\"").append(escape(settings.getPermalinkCopiedMessage())).append('"')
                     .append(" data-fallback-message=\"").append(escape(settings.getPermalinkFallbackMessage())).append("\"></div>");
             if (jsUrl != null) {
