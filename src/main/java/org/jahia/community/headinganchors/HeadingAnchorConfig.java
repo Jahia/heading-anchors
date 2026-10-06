@@ -2,6 +2,7 @@ package org.jahia.community.headinganchors;
 
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
+import org.osgi.service.metatype.annotations.Option;
 
 /**
  * Karaf configuration, PID {@value HeadingAnchorFilter#PID}.
@@ -23,16 +24,19 @@ public @interface HeadingAnchorConfig {
             + "The first selector matching at least one element is used.")
     String scope() default "main,body";
 
-    @AttributeDefinition(description = "heading: id on the heading (existing id kept); anchor: empty <a id> inserted in the heading")
+    @AttributeDefinition(description = "heading: id on the heading (existing id kept); anchor: empty <a id> inserted in the heading",
+            options = {@Option(label = "Id on the heading", value = "heading"), @Option(label = "Empty anchor in the heading", value = "anchor")})
     String mode() default "heading";
 
     @AttributeDefinition(description = "Heading mode, heading with an id different from its slug. keep: the id is kept "
-            + "and used by the permalink; anchor: the id is kept and the slug is added with an empty <a> in the heading")
+            + "and used by the permalink; anchor: the id is kept and the slug is added with an empty <a> in the heading",
+            options = {@Option(label = "Keep the existing id", value = "keep"), @Option(label = "Also add the slug", value = "anchor")})
     String existingId() default "keep";
 
     @AttributeDefinition(description = "Manual anchor (empty <a id> without href) in the section of a heading without id, "
             + "holding the heading slug. keep: the anchor is kept and the heading gets a suffixed slug; "
-            + "adopt: the heading takes the slug and the anchor loses its id")
+            + "adopt: the heading takes the slug and the anchor loses its id",
+            options = {@Option(label = "Keep the manual anchor", value = "keep"), @Option(label = "Heading adopts the slug", value = "adopt")})
     String legacyAnchors() default "keep";
 
     @AttributeDefinition(description = "CSS class of the injected <a>")
@@ -41,7 +45,7 @@ public @interface HeadingAnchorConfig {
     @AttributeDefinition(description = "Also set the legacy name attribute on the injected <a> in anchor mode")
     boolean anchor_name() default false;
 
-    @AttributeDefinition(description = "Add a copy-permalink button next to each heading")
+    @AttributeDefinition(description = "Add a copy-link button to each heading")
     boolean permalink_enabled() default false;
 
     @AttributeDefinition(description = "Comma-separated heading tags getting a permalink button (subset of headings)")
