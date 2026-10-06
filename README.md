@@ -22,7 +22,7 @@ It can optionally add a "copy link" button to each heading.
 4. Optionally, adapt the configuration (see below), for example to add the copy-link button (`permalink.enabled=true`)
    or to keep headings below a sticky header (`scrollMarginTop=120px`). Changes apply immediately, without restart:
    - **Felix web console**: **Administration > Tools > OSGi console > Configuration > Heading anchors**
-     (`/modules/tools/osgi/console/configMgr`), edit the values and **Save**
+     (`/tools/osgi/console/configMgr`), edit the values and **Save**
    - **file**: `karaf/etc/org.jahia.community.headinganchors.cfg`
    - **provisioning API**: `- editConfiguration: "org.jahia.community.headinganchors"` with `properties`
 
