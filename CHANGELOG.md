@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-06
+
 First release.
 
 ### Added
@@ -40,6 +42,7 @@ First release.
 - The page structure and layout are never changed (no wrapper, the button never makes a heading taller), the
   stylesheet only targets elements injected or marked by the module, and injected elements are isolated from the
   site styles (`all: unset`, `!important` declarations).
-- All injected attribute values are HTML-escaped; configuration values used in CSS are validated.
+- All injected attribute values are HTML-escaped.
 
-[Unreleased]: https://github.com/Jahia/heading-anchors/commits/main
+[Unreleased]: https://github.com/Jahia/heading-anchors/compare/1_0_0...HEAD
+[1.0.0]: https://github.com/Jahia/heading-anchors/releases/tag/1_0_0

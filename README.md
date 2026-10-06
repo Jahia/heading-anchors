@@ -9,6 +9,9 @@ Jahia module that adds slug-based anchors to the headings of rendered pages, so 
 directly (for example `/customer-center.html#jahia-lifecycle`), whatever the template or the component used.
 It can optionally add a "copy link" button to each heading.
 
+Watch the [3-minute overview video](https://github.com/Jahia/heading-anchors/releases/download/1_0_0/heading-anchors-overview.mp4)
+(English, [captions](https://github.com/Jahia/heading-anchors/releases/download/1_0_0/heading-anchors-overview.vtt)).
+
 ## Requirements
 
 - Jahia 8.2.1 or later, on JDK 11.0.13+ or JDK 17 (see the [supported stack](https://academy.jahia.com/downloads/supported-stack))
