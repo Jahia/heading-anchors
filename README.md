@@ -119,6 +119,7 @@ A Jahia license is needed: put it base64-encoded in `JAHIA_LICENSE` in `tests/.e
 
 ## Release
 
+Before releasing, move the `[Unreleased]` entries of `CHANGELOG.md` to a new `[X.Y.Z] - YYYY-MM-DD` section.
 The tag must have the format `X_X_X`:
 
 ```bash
