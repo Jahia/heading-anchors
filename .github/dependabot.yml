@@ -4,6 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # The module is built in Java 11 for Jahia 8.2.1+: JUnit 6 requires Java 17
+      - dependency-name: "org.junit.jupiter:*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "npm"
     directory: "/tests"
     schedule:
