@@ -1,0 +1,16 @@
+/.claude
+/.classpath
+/.project
+/.settings
+.idea
+*.iml
+*.ipr
+target
+.DS_Store
+
+/pom.xml.tag
+/release.properties
+/pom.xml.releaseBackup
+/pom.xml.next
+
+.env
