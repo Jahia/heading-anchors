@@ -31,8 +31,7 @@ class HeadingAnchorProcessorTest {
         assertThat(out).contains("<h2>Menu</h2>")
                 .contains("<h2 id=\"jahia-lifecycle\"" + M + ">Jahia lifecycle</h2>")
                 .contains("<h3 id=\"support\"" + M + ">Support</h3>")
-                .contains("<link rel=\"stylesheet\" href=\"" + CSS + "\"></head>")
-                .doesNotContain(JS);
+                .contains("<link rel=\"stylesheet\" href=\"" + CSS + "\"></head>");
     }
 
     @Test
@@ -214,16 +213,16 @@ class HeadingAnchorProcessorTest {
 
         assertThat(out).contains("<a href=\"/x\"><h3 id=\"card\"" + M + ">Card</h3></a>")
                 .doesNotContain("heading-anchors-permalink\"")
-                .doesNotContain(JS);
+                .doesNotContain("heading-anchors-status");
     }
 
     @Test
-    void injectsScrollMargin() {
-        HeadingAnchorSettings settings = new HeadingAnchorSettings().setScrollMarginTop("120px");
+    void injectsTheScriptWithoutPermalinkForTheHeaderOffset() {
+        String out = process(new HeadingAnchorSettings(), page("<main><h2>A</h2></main>"));
 
-        String out = process(settings, page("<main><h2>A</h2></main>"));
-
-        assertThat(out).contains("<style>:root{--heading-anchors-scroll-margin:120px}</style></head>");
+        assertThat(out).contains("<script src=\"" + JS + "\" defer></script></body>")
+                .doesNotContain("heading-anchors-status")
+                .doesNotContain("<style>");
     }
 
     @Test

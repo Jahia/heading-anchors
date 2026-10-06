@@ -29,7 +29,6 @@ public final class HeadingAnchorSettings {
     private String permalinkLabel = "";
     private String permalinkCopiedMessage = "";
     private String permalinkFallbackMessage = "";
-    private String scrollMarginTop = "";
 
     public List<String> getHeadings() {
         return headings;
@@ -146,15 +145,6 @@ public final class HeadingAnchorSettings {
 
     public HeadingAnchorSettings setPermalinkFallbackMessage(String permalinkFallbackMessage) {
         this.permalinkFallbackMessage = permalinkFallbackMessage;
-        return this;
-    }
-
-    public String getScrollMarginTop() {
-        return scrollMarginTop;
-    }
-
-    public HeadingAnchorSettings setScrollMarginTop(String scrollMarginTop) {
-        this.scrollMarginTop = scrollMarginTop;
         return this;
     }
 

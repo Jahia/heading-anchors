@@ -20,7 +20,7 @@ It can optionally add a "copy link" button to each heading.
    `- enable: "heading-anchors"` / `site: "<siteKey>"`). Sites where the module is not enabled are never changed.
 3. Headings now have ids: `page.html#section-title` links to the section.
 4. Optionally, adapt the configuration (see below), for example to add the copy-link button (`permalink.enabled=true`)
-   or to keep headings below a sticky header (`scrollMarginTop=120px`). Changes apply immediately, without restart:
+   or to change the heading levels. Changes apply immediately, without restart:
    - **Felix web console**: **Administration > Tools > OSGi console > Configuration > Heading anchors**
      (`/tools/osgi/console/configMgr`), edit the values and **Save**
    - **file**: `karaf/etc/org.jahia.community.headinganchors.cfg`
@@ -89,10 +89,21 @@ it starts with `# default configuration`, so redeploying the module never overwr
 | `permalink.label` | (empty) | Label of the button, also shown as tooltip; `{0}` is the heading text. Empty: translated |
 | `permalink.copiedMessage` | (empty) | Message shown after the copy. Empty: translated |
 | `permalink.fallbackMessage` | (empty) | Message shown when the clipboard is not available. Empty: translated |
-| `scrollMarginTop` | (empty) | `scroll-margin-top` of anchored headings, e.g. `120px` for a sticky header (default `1rem`) |
 
 The button label ("Copy link") and the messages are translated in the language of the page (English, French,
 German; other languages get English). A value in the configuration overrides the translations for every language.
+
+## Sticky headers
+
+Nothing to configure: when the site has a sticky or fixed header, a heading reached by a link stops just below it,
+on every site and every template. The script of the module measures the bars attached to the top of the window
+(at least half as wide as the page, stacked bars included) when the page loads, when the window is resized and just
+before a jump to a section of the page, then sets `--heading-anchors-offset` on the root element. Anchored headings
+get `scroll-margin-top: offset + 1rem`; the toast, when shown at the top, also stays below the header.
+
+The offset never exceeds half of the window, and elements almost as tall as the window (menus, dialogs) are ignored.
+A template whose header is not detected (for example a header that only appears when scrolling up) can set the whole
+margin with `--heading-anchors-scroll-margin`, which wins over the measure.
 
 ## Theming
 
@@ -100,7 +111,7 @@ The theme can use these CSS custom properties:
 
 | Property | Default |
 |---|---|
-| `--heading-anchors-scroll-margin` | `1rem` |
+| `--heading-anchors-scroll-margin` | measured header height + `1rem` |
 | `--heading-anchors-toast-background` | `#1f1f1f` (toast and tooltip) |
 | `--heading-anchors-toast-color` | `#fff` (toast and tooltip) |
 | `--heading-anchors-toast-font-size` | `1em` |

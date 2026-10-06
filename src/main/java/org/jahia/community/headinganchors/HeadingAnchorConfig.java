@@ -56,7 +56,4 @@ public @interface HeadingAnchorConfig {
 
     @AttributeDefinition(description = "Message shown when the clipboard is not available. Empty: translated in the page language.")
     String permalink_fallbackMessage() default "";
-
-    @AttributeDefinition(description = "scroll-margin-top applied to anchored headings, e.g. 120px or 6rem; empty keeps the CSS default")
-    String scrollMarginTop() default "";
 }
