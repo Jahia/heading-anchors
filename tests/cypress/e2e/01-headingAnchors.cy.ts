@@ -20,9 +20,11 @@ describe('Heading anchors', () => {
         scope: 'main,body',
         mode: 'heading',
         existingId: 'keep',
+        legacyAnchors: 'keep',
         'anchor.class': 'heading-anchors-target',
         'anchor.name': 'false',
         'permalink.enabled': 'false',
+        'permalink.headings': 'h2,h3,h4,h5',
         'permalink.label': '',
         'permalink.copiedMessage': '',
         'permalink.fallbackMessage': '',
@@ -36,6 +38,8 @@ describe('Heading anchors', () => {
         '<h2>Overview</h2><h2>Overview</h2>',
         '<h2 id="custom-id">Custom heading</h2>',
         '<h2 id="faq">FAQ</h2><h2 id="faq">FAQ</h2>',
+        // Manual anchor typed in the text below a heading, as on academy
+        '<h2>Legacy section</h2><p><a id="legacy-section"></a>Legacy text</p>',
         '<h3>Жизненный цикл</h3>',
         '<h3>生命周期</h3>',
         '<h6>Small heading</h6>',
@@ -81,7 +85,7 @@ describe('Heading anchors', () => {
     const headingsOf = (html: string) => Array.from(parse(html).querySelectorAll('.ha-test h2, .ha-test h3, .ha-test h6'))
         .map(element => ({tag: element.tagName.toLowerCase(), id: element.getAttribute('id'), text: element.textContent}));
 
-    const permalinkOf = (id: string) => `[data-heading-anchors]#${id} + .heading-anchors-permalink`;
+    const permalinkOf = (id: string) => `[data-heading-anchors]#${id} > .heading-anchors-permalink`;
 
     before(() => {
         cy.login();
@@ -134,6 +138,7 @@ describe('Heading anchors', () => {
                 {tag: 'h2', id: 'custom-id', text: 'Custom heading'},
                 {tag: 'h2', id: 'faq', text: 'FAQ'},
                 {tag: 'h2', id: 'faq', text: 'FAQ'},
+                {tag: 'h2', id: 'legacy-section_1', text: 'Legacy section'},
                 {tag: 'h3', id: 'zhiznennyi-cikl', text: 'Жизненный цикл'},
                 {tag: 'h3', id: '生命周期', text: '生命周期'},
                 {tag: 'h6', id: null, text: 'Small heading'},
@@ -147,6 +152,8 @@ describe('Heading anchors', () => {
             const faqHeadings = doc.querySelectorAll('.ha-test h2[id="faq"]');
             expect(faqHeadings[0].querySelector('a')).to.equal(null);
             expect(faqHeadings[1].querySelector('a.heading-anchors-target').getAttribute('id')).to.equal('faq_1');
+            // A manual anchor below a heading is kept by default (legacyAnchors=keep)
+            expect(doc.querySelector('a#legacy-section').closest('p').textContent).to.equal('Legacy text');
             // Every id of the page is unique and valid (not empty, no ASCII whitespace)
             const anchorIds = Array.from(doc.querySelectorAll('[data-heading-anchors]'))
                 .map(element => element.getAttribute('id'))
@@ -167,6 +174,17 @@ describe('Heading anchors', () => {
             expect(anchor.getAttribute('id')).to.equal('custom-heading');
             expect(anchor.hasAttribute('data-heading-anchors')).to.equal(true);
             expect(anchor.textContent).to.equal('');
+        });
+    });
+
+    it('lets the heading adopt a manual anchor of its section when configured', () => {
+        configure({legacyAnchors: 'adopt'});
+        waitForPage(html => html.includes('id="legacy-section"') && !html.includes('legacy-section_1'));
+        fetchPage().then(html => {
+            const doc = parse(html);
+            expect(doc.querySelector('#legacy-section').tagName.toLowerCase()).to.equal('h2');
+            // The manual anchor lost its id, so links to #legacy-section now reach the heading
+            expect(doc.querySelectorAll('[id="legacy-section"]')).to.have.length(1);
         });
     });
 
@@ -194,6 +212,7 @@ describe('Heading anchors', () => {
                 'custom-id',
                 'faq',
                 'faq',
+                null,
                 'zhiznennyi-cikl',
                 '生命周期',
                 null,
@@ -270,31 +289,68 @@ describe('Heading anchors', () => {
             waitForPage(html => html.includes('heading-anchors-permalink'));
         });
 
-        it('renders an accessible button after each heading', () => {
+        it('renders an accessible button as last child of each heading', () => {
             fetchPage().then(html => {
                 const doc = parse(html);
-                const wrapper = doc.querySelector('#jahia-lifecycle').parentElement;
-                expect(wrapper.classList.contains('heading-anchors-wrap')).to.equal(true);
-                const button = wrapper.querySelector('button.heading-anchors-permalink');
+                const heading = doc.querySelector('#jahia-lifecycle');
+                const button = heading.lastElementChild;
+                expect(button.tagName.toLowerCase()).to.equal('button');
+                expect(button.classList.contains('heading-anchors-permalink')).to.equal(true);
                 expect(button.getAttribute('type')).to.equal('button');
                 expect(button.getAttribute('data-target')).to.equal('jahia-lifecycle');
-                expect(button.getAttribute('aria-label')).to.equal('Copy link to section: Jahia lifecycle');
-                expect(button.querySelector('[aria-hidden="true"]').textContent).to.equal('#');
-                // The button is not part of the heading
-                expect(doc.querySelector('#jahia-lifecycle button')).to.equal(null);
+                expect(button.getAttribute('aria-label')).to.equal('Copy link');
+                // Empty button: the heading text read by table of contents scripts is unchanged
+                expect(button.textContent).to.equal('');
+                expect(heading.textContent).to.equal('Jahia lifecycle');
+                // No wrapper: the page structure is unchanged
+                expect(doc.querySelector('.heading-anchors-wrap')).to.equal(null);
                 // A manually typed id is used by the permalink
-                expect(doc.querySelector('#custom-id + button').getAttribute('data-target')).to.equal('custom-id');
+                expect(doc.querySelector('#custom-id > button').getAttribute('data-target')).to.equal('custom-id');
+                // Only the configured levels get a button (h6 is not processed at all)
+                expect(doc.querySelector('.ha-test h6 button')).to.equal(null);
                 const status = doc.querySelector('#heading-anchors-status');
                 expect(status.getAttribute('role')).to.equal('status');
                 expect(doc.querySelectorAll('#heading-anchors-status')).to.have.length(1);
             });
         });
 
+        it('does not change the layout of the page', () => {
+            const rectsOf = (doc: Document) => Array.from(doc.querySelectorAll('.ha-test h2, .ha-test h3'))
+                .map(element => {
+                    const rect = element.getBoundingClientRect();
+                    return [Math.round(rect.top), Math.round(rect.width), Math.round(rect.height)].join(',');
+                });
+            cy.visit(previewUrl);
+            cy.document().then(doc => {
+                const withButtons = rectsOf(doc);
+                configure({'permalink.enabled': 'false'});
+                waitForPage(html => !html.includes('heading-anchors-permalink'));
+                cy.visit(previewUrl);
+                cy.document().then(plainDoc => {
+                    expect(rectsOf(plainDoc)).to.deep.equal(withButtons);
+                });
+            });
+        });
+
+        it('shows the label as a tooltip, dismissible with Escape (WCAG 1.4.13, 2.5.3)', () => {
+            cy.visit(previewUrl);
+            cy.get(permalinkOf('jahia-lifecycle')).focus();
+            cy.get(permalinkOf('jahia-lifecycle')).then($button => {
+                const win = $button[0].ownerDocument.defaultView;
+                expect(win.getComputedStyle($button[0], '::before').content).to.contain('#');
+                expect(win.getComputedStyle($button[0], '::after').display).to.equal('block');
+                expect(win.getComputedStyle($button[0], '::after').content).to.contain('Copy link');
+            });
+            cy.get('body').type('{esc}');
+            cy.get(permalinkOf('jahia-lifecycle')).should('have.class', 'is-dismissed').then($button => {
+                expect($button[0].ownerDocument.defaultView.getComputedStyle($button[0], '::after').display).to.equal('none');
+            });
+        });
+
         it('uses the language of the page (WCAG 3.1.2)', () => {
             fetchPage(previewUrlFr).then(html => {
                 const doc = parse(html);
-                expect(doc.querySelector('#jahia-lifecycle + button').getAttribute('aria-label'))
-                    .to.equal('Copier le lien vers la section : Jahia lifecycle');
+                expect(doc.querySelector('#jahia-lifecycle > button').getAttribute('aria-label')).to.equal('Copier le lien');
                 const status = doc.querySelector('#heading-anchors-status');
                 expect(status.getAttribute('data-copied-message')).to.equal('Lien copié dans le presse-papiers');
                 expect(status.getAttribute('data-fallback-message')).to.equal('Le lien est dans la barre d\'adresse');
@@ -414,8 +470,7 @@ describe('Heading anchors', () => {
                 .should('have.css', 'background-color', 'rgba(0, 0, 0, 0)')
                 .and('have.css', 'border-top-width', '0px')
                 .and('have.css', 'opacity', '0')
-                .and('have.css', 'position', 'static');
-            cy.get('.heading-anchors-wrap').first().should('have.css', 'display', 'flex').and('have.css', 'margin-top', '0px');
+                .and('have.css', 'position', 'relative');
             cy.get('#heading-anchors-status')
                 .should('have.css', 'position', 'fixed')
                 .and('have.css', 'opacity', '0');
@@ -458,7 +513,7 @@ describe('Heading anchors', () => {
             cy.window().then(win => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const axe = (win as any).axe;
-                return axe.run({include: [['.heading-anchors-wrap'], ['#heading-anchors-status'], ['[data-heading-anchors]']]},
+                return axe.run({include: [['.heading-anchors-permalink'], ['#heading-anchors-status'], ['[data-heading-anchors]']]},
                     {runOnly: {type: 'tag', values: WCAG_22_AA}});
             }).then(results => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -54,6 +54,27 @@
         announce(status && status.getAttribute('data-fallback-message'));
     }
 
+    // WCAG 1.4.13: the tooltip can be dismissed with Escape without moving the pointer or the focus
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') {
+            return;
+        }
+        var buttons = document.querySelectorAll('.heading-anchors-permalink:hover, .heading-anchors-permalink:focus');
+        Array.prototype.forEach.call(buttons, function (button) {
+            button.classList.add('is-dismissed');
+        });
+    });
+
+    function resetDismissed(event) {
+        var button = event.target.closest && event.target.closest('.heading-anchors-permalink');
+        if (button && !button.contains(event.relatedTarget)) {
+            button.classList.remove('is-dismissed');
+        }
+    }
+
+    document.addEventListener('focusout', resetDismissed);
+    document.addEventListener('mouseout', resetDismissed);
+
     document.addEventListener('click', function (event) {
         var button = event.target.closest && event.target.closest('.heading-anchors-permalink');
         if (!button) {

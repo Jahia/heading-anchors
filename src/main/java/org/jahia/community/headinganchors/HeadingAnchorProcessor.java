@@ -22,7 +22,6 @@ import java.util.Set;
 public class HeadingAnchorProcessor {
 
     static final String STATUS_ID = "heading-anchors-status";
-    static final String WRAPPER_CLASS = "heading-anchors-wrap";
     static final String PERMALINK_CLASS = "heading-anchors-permalink";
     static final String TOAST_CLASS = "heading-anchors-toast";
     /** Marks every element handled by the module: the stylesheet only targets marked or injected elements */
@@ -32,6 +31,7 @@ public class HeadingAnchorProcessor {
 
     private final HeadingAnchorSettings settings;
     private final PermalinkMessages messages;
+    private final List<String> notices = new ArrayList<>();
     private final String cssUrl;
     private final String jsUrl;
 
@@ -63,11 +63,14 @@ public class HeadingAnchorProcessor {
 
         Map<String, Integer> firstIdPositions = collectIds(source);
         Set<String> usedIds = new HashSet<>(firstIdPositions.keySet());
+        Map<String, Element> legacyAnchors = collectLegacyAnchors(source);
         List<Element> interactiveElements = collectInteractiveElements(source);
         OutputDocument out = new OutputDocument(source);
         boolean permalinkAdded = false;
 
-        for (Element heading : headings) {
+        for (int index = 0; index < headings.size(); index++) {
+            Element heading = headings.get(index);
+            int sectionEnd = index + 1 < headings.size() ? headings.get(index + 1).getBegin() : source.length();
             StartTag startTag = heading.getStartTag();
             String text = heading.getTextExtractor().setIncludeAttributes(false).toString().trim();
             String existingId = trimToNull(startTag.getAttributeValue("id"));
@@ -81,7 +84,7 @@ public class HeadingAnchorProcessor {
                 int attributesPosition = startTag.getBegin() + 1 + startTag.getName().length();
                 String slug = SlugGenerator.slugify(text);
                 if (existingId == null) {
-                    targetId = SlugGenerator.unique(slug, usedIds);
+                    targetId = slugForHeading(slug, heading, sectionEnd, usedIds, legacyAnchors, out);
                     out.insert(attributesPosition, " id=\"" + targetId + "\" " + MARKER_ATTRIBUTE);
                 } else if (isUsable(existingId, startTag, firstIdPositions)
                         && (existingId.equals(slug) || !settings.isAnchorOnExistingId())) {
@@ -99,15 +102,72 @@ public class HeadingAnchorProcessor {
             }
 
             EndTag endTag = heading.getEndTag();
-            if (settings.isPermalinkEnabled() && endTag != null && !isInsideInteractive(heading, interactiveElements)) {
-                out.insert(startTag.getBegin(), "<div class=\"" + WRAPPER_CLASS + "\">");
-                out.insert(heading.getEnd(), permalinkMarkup(targetId, text) + "</div>");
+            if (settings.isPermalinkEnabled() && settings.getPermalinkHeadings().contains(heading.getName())
+                    && endTag != null && !isInsideInteractive(heading, interactiveElements)) {
+                // Last child of the heading: the page structure is unchanged (no wrapper), so site selectors such as
+                // "p + h2" or ".box > h2" keep working. The glyph is drawn in CSS, out of the heading text content
+                out.insert(endTag.getBegin(), permalinkMarkup(targetId, text));
                 permalinkAdded = true;
             }
         }
 
         injectAssets(source, out, permalinkAdded);
         return out.toString();
+    }
+
+    /**
+     * @return what the processor noticed on the last processed page, e.g. manual anchors kept next to a heading
+     */
+    public List<String> getNotices() {
+        return notices;
+    }
+
+    /**
+     * Returns the id of a heading without id. When the slug is already taken by a manual anchor of its section
+     * (an empty {@code <a id>} without href, e.g. typed in the text below the heading), the anchor is kept by default
+     * and the heading gets a suffixed slug; with {@code legacyAnchors=adopt}, the heading takes the slug and the anchor
+     * loses its id, so existing links reach the heading.
+     */
+    private String slugForHeading(String slug, Element heading, int sectionEnd, Set<String> usedIds,
+                                  Map<String, Element> legacyAnchors, OutputDocument out) {
+        Element legacy = legacyAnchors.get(slug);
+        if (legacy == null || legacy.getBegin() < heading.getEnd() || legacy.getBegin() >= sectionEnd) {
+            return SlugGenerator.unique(slug, usedIds);
+        }
+        if (settings.isAdoptLegacyAnchors()) {
+            removeAttribute(out, legacy.getStartTag(), "id");
+            if (slug.equals(legacy.getStartTag().getAttributeValue("name"))) {
+                removeAttribute(out, legacy.getStartTag(), "name");
+            }
+            legacyAnchors.remove(slug);
+            notices.add("Manual anchor '" + slug + "' adopted by its heading");
+            return slug;
+        }
+        String id = SlugGenerator.unique(slug, usedIds);
+        notices.add("Manual anchor '" + slug + "' kept below its heading, which gets '" + id + "'");
+        return id;
+    }
+
+    private static void removeAttribute(OutputDocument out, StartTag tag, String name) {
+        if (tag.getAttributes() != null && tag.getAttributes().get(name) != null) {
+            out.replace(tag.getAttributes().get(name), "");
+        }
+    }
+
+    /**
+     * Manual anchors: empty {@code <a>} elements with an id and without href, the usual way to create a link target
+     * in rich text.
+     */
+    private static Map<String, Element> collectLegacyAnchors(Source source) {
+        Map<String, Element> anchors = new HashMap<>();
+        for (Element anchor : source.getAllElements("a")) {
+            String id = trimToNull(anchor.getAttributeValue("id"));
+            if (id != null && anchor.getAttributeValue("href") == null && anchor.getChildElements().isEmpty()
+                    && anchor.getContent().toString().trim().isEmpty()) {
+                anchors.putIfAbsent(id, anchor);
+            }
+        }
+        return anchors;
     }
 
     private List<Element> resolveScopes(Source source) {
@@ -187,10 +247,14 @@ public class HeadingAnchorProcessor {
         return sb.append("></a>").toString();
     }
 
+    /**
+     * Empty button: the "#" glyph and the tooltip are CSS generated content, so they are not part of the heading text
+     * read by table of contents scripts. The tooltip shows the accessible name (WCAG 2.5.3).
+     */
     private String permalinkMarkup(String id, String headingText) {
         String label = messages.getLabel(headingText);
         return "<button type=\"button\" class=\"" + PERMALINK_CLASS + "\" data-target=\"" + escape(id) + "\""
-                + " aria-label=\"" + escape(label) + "\"><span aria-hidden=\"true\">#</span></button>";
+                + " aria-label=\"" + escape(label) + "\"></button>";
     }
 
     private void injectAssets(Source source, OutputDocument out, boolean permalinkAdded) {

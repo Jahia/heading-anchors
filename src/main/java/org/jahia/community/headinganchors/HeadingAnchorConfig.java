@@ -30,6 +30,11 @@ public @interface HeadingAnchorConfig {
             + "and used by the permalink; anchor: the id is kept and the slug is added with an empty <a> in the heading")
     String existingId() default "keep";
 
+    @AttributeDefinition(description = "Manual anchor (empty <a id> without href) in the section of a heading without id, "
+            + "holding the heading slug. keep: the anchor is kept and the heading gets a suffixed slug; "
+            + "adopt: the heading takes the slug and the anchor loses its id")
+    String legacyAnchors() default "keep";
+
     @AttributeDefinition(description = "CSS class of the injected <a>")
     String anchor_class() default "heading-anchors-target";
 
@@ -39,8 +44,11 @@ public @interface HeadingAnchorConfig {
     @AttributeDefinition(description = "Add a copy-permalink button next to each heading")
     boolean permalink_enabled() default false;
 
-    @AttributeDefinition(description = "Accessible label of the permalink button, {0} is replaced by the heading text. "
-            + "Empty: translated in the page language (en, fr, de). A value overrides it for every language.")
+    @AttributeDefinition(description = "Comma-separated heading tags getting a permalink button (subset of headings)")
+    String permalink_headings() default "h2,h3,h4,h5";
+
+    @AttributeDefinition(description = "Label of the permalink button, also shown as tooltip; {0} is replaced by the heading "
+            + "text. Empty: translated in the page language (en, fr, de). A value overrides it for every language.")
     String permalink_label() default "";
 
     @AttributeDefinition(description = "Message shown when the link is copied. Empty: translated in the page language.")
