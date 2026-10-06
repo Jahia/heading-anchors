@@ -1,0 +1,10 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+# Java resource bundles: ISO-8859-1, as expected by the Java and Jahia tooling
+[*.properties]
+charset = latin1

@@ -2,6 +2,8 @@ package org.jahia.community.headinganchors;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,5 +43,28 @@ class PermalinkMessagesTest {
         assertThat(messages.getLabel("A")).isEqualTo("Lien : A");
         assertThat(messages.getCopied()).isEqualTo("Copié");
         assertThat(messages.getFallback()).isEqualTo("Der Link steht in der Adressleiste");
+    }
+
+    @Test
+    void bundlesAreEncodedInIso88591() throws IOException {
+        try (InputStream in = PermalinkMessagesTest.class.getResourceAsStream("/org/jahia/community/headinganchors/messages_fr.properties")) {
+            byte[] bytes = in.readAllBytes();
+            // "copi\u00e9": a single 0xE9 byte, not the UTF-8 sequence 0xC3 0xA9
+            assertThat(indexOf(bytes, new byte[]{'p', 'i', (byte) 0xE9})).isGreaterThan(0);
+            assertThat(indexOf(bytes, new byte[]{(byte) 0xC3, (byte) 0xA9})).isEqualTo(-1);
+        }
+    }
+
+    private static int indexOf(byte[] bytes, byte[] pattern) {
+        for (int i = 0; i <= bytes.length - pattern.length; i++) {
+            int j = 0;
+            while (j < pattern.length && bytes[i + j] == pattern[j]) {
+                j++;
+            }
+            if (j == pattern.length) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
