@@ -38,7 +38,7 @@ public class HeadingAnchorProcessor {
     /**
      * @param messages texts of the permalink button and of the copy feedback, in the page language
      * @param cssUrl   stylesheet injected in the head, or {@code null}
-     * @param jsUrl    script injected when a permalink button is added, or {@code null}
+     * @param jsUrl    script injected when a heading is anchored (scroll offset, permalink buttons), or {@code null}
      */
     public HeadingAnchorProcessor(HeadingAnchorSettings settings, PermalinkMessages messages, String cssUrl, String jsUrl) {
         this.settings = settings;
@@ -264,19 +264,18 @@ public class HeadingAnchorProcessor {
             if (cssUrl != null) {
                 headAssets.append("<link rel=\"stylesheet\" href=\"").append(escape(cssUrl)).append("\">");
             }
-            if (settings.getScrollMarginTop() != null && !settings.getScrollMarginTop().isEmpty()) {
-                headAssets.append("<style>:root{--heading-anchors-scroll-margin:")
-                        .append(settings.getScrollMarginTop()).append("}</style>");
-            }
             out.insert(head.getEndTag().getBegin(), headAssets);
         }
 
         Element body = source.getFirstElement("body");
-        if (permalinkAdded && body != null && body.getEndTag() != null) {
+        if (body != null && body.getEndTag() != null) {
             StringBuilder bodyAssets = new StringBuilder();
-            bodyAssets.append("<div id=\"").append(STATUS_ID).append("\" role=\"status\" class=\"").append(TOAST_CLASS).append('"')
-                    .append(" data-copied-message=\"").append(escape(messages.getCopied())).append('"')
-                    .append(" data-fallback-message=\"").append(escape(messages.getFallback())).append("\"></div>");
+            if (permalinkAdded) {
+                bodyAssets.append("<div id=\"").append(STATUS_ID).append("\" role=\"status\" class=\"").append(TOAST_CLASS).append('"')
+                        .append(" data-copied-message=\"").append(escape(messages.getCopied())).append('"')
+                        .append(" data-fallback-message=\"").append(escape(messages.getFallback())).append("\"></div>");
+            }
+            // Always: the script also keeps anchored headings below the sticky header of the site
             if (jsUrl != null) {
                 bodyAssets.append("<script src=\"").append(escape(jsUrl)).append("\" defer></script>");
             }

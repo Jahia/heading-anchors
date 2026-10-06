@@ -38,7 +38,6 @@ public class HeadingAnchorFilter extends AbstractFilter {
     static final String MODULE_ID = "heading-anchors";
     private static final String MODULE_PATH = "/modules/" + MODULE_ID;
     private static final Pattern HEADING_TAG = Pattern.compile("h[1-6]");
-    private static final Pattern CSS_LENGTH = Pattern.compile("^\\d+(\\.\\d+)?(px|rem|em|vh)$");
 
     private volatile boolean enabled;
     private volatile Set<String> modes = Set.of();
@@ -67,12 +66,6 @@ public class HeadingAnchorFilter extends AbstractFilter {
         List<String> headings = headingTags(config.headings());
         List<String> permalinkHeadings = headingTags(config.permalink_headings());
 
-        String scrollMarginTop = config.scrollMarginTop() == null ? "" : config.scrollMarginTop().trim();
-        if (!scrollMarginTop.isEmpty() && !CSS_LENGTH.matcher(scrollMarginTop).matches()) {
-            logger.warn("Ignoring invalid scrollMarginTop '{}'", scrollMarginTop);
-            scrollMarginTop = "";
-        }
-
         HeadingAnchorSettings.Mode mode = "anchor".equalsIgnoreCase(config.mode().trim())
                 ? HeadingAnchorSettings.Mode.ANCHOR : HeadingAnchorSettings.Mode.HEADING;
 
@@ -88,8 +81,7 @@ public class HeadingAnchorFilter extends AbstractFilter {
                 .setPermalinkEnabled(config.permalink_enabled())
                 .setPermalinkLabel(config.permalink_label())
                 .setPermalinkCopiedMessage(config.permalink_copiedMessage())
-                .setPermalinkFallbackMessage(config.permalink_fallbackMessage())
-                .setScrollMarginTop(scrollMarginTop);
+                .setPermalinkFallbackMessage(config.permalink_fallbackMessage());
         modes = Set.copyOf(split(config.modes()));
         enabled = config.enabled() && !headings.isEmpty() && !scopes.isEmpty();
         logger.info("Heading anchors configured: enabled={}, modes={}, headings={}, scope={}, mode={}, permalink={}",

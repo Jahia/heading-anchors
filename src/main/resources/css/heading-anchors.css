@@ -9,9 +9,12 @@
  * - the page structure is never changed: the permalink button is the last child of its heading
  */
 
-/* Keeps anchored headings visible below sticky headers; override --heading-anchors-scroll-margin in the theme */
+/*
+ * Keeps anchored headings visible below the sticky or fixed header of the site: --heading-anchors-offset is its
+ * height, measured by the script. A theme can force the whole margin with --heading-anchors-scroll-margin
+ */
 [data-heading-anchors] {
-    scroll-margin-top: var(--heading-anchors-scroll-margin, 1rem);
+    scroll-margin-top: var(--heading-anchors-scroll-margin, calc(var(--heading-anchors-offset, 0px) + 1rem));
 }
 
 /* Permalink button, inside the heading: inherits its color, sized relative to its font */
@@ -140,7 +143,7 @@ div#heading-anchors-status.heading-anchors-toast.is-visible {
 
 /* WCAG 2.4.11: used when the toast would cover the focused button */
 div#heading-anchors-status.heading-anchors-toast.is-top {
-    top: calc(1.5rem + env(safe-area-inset-top, 0px)) !important;
+    top: calc(var(--heading-anchors-offset, 0px) + 1.5rem + env(safe-area-inset-top, 0px)) !important;
     bottom: auto !important;
 }
 

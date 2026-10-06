@@ -27,8 +27,7 @@ describe('Heading anchors', () => {
         'permalink.headings': 'h2,h3,h4,h5',
         'permalink.label': '',
         'permalink.copiedMessage': '',
-        'permalink.fallbackMessage': '',
-        scrollMarginTop: ''
+        'permalink.fallbackMessage': ''
     };
 
     const CONTENT = [
@@ -162,7 +161,8 @@ describe('Heading anchors', () => {
             anchorIds.forEach(id => expect(id).to.match(/^[^\t\n\f\r ]+$/));
             expect(doc.querySelector('link[href$="/modules/heading-anchors/css/heading-anchors.css"]')).to.not.equal(null);
             expect(doc.querySelector('.heading-anchors-permalink')).to.equal(null);
-            expect(doc.querySelector('script[src$="/modules/heading-anchors/javascript/heading-anchors.js"]')).to.equal(null);
+            expect(doc.querySelector('script[src$="/modules/heading-anchors/javascript/heading-anchors.js"]')).not.to.equal(null);
+            expect(doc.querySelector('#heading-anchors-status')).to.equal(null);
         });
     });
 
@@ -188,14 +188,48 @@ describe('Heading anchors', () => {
         });
     });
 
-    it('scrolls to the heading below the configured margin when the URL has a fragment', () => {
-        configure({scrollMarginTop: '120px'});
-        waitForPage(html => html.includes('--heading-anchors-scroll-margin:120px'));
+    const STICKY_BAR = '<div id="ha-test-bar" style="position:fixed;top:0;left:0;right:0;height:100px;'
+        + 'background:#333;z-index:10"></div>';
+
+    const offsetOf = (win: Window) => parseFloat(win.document.documentElement.style.getPropertyValue('--heading-anchors-offset'));
+    const remOf = (win: Window) => parseFloat(win.getComputedStyle(win.document.documentElement).fontSize);
+
+    it('stops a heading reached by the URL fragment below the sticky header, without configuration', () => {
+        cy.intercept({method: 'GET', url: `${previewUrl}*`}, req => {
+            req.continue(res => {
+                res.body = String(res.body).replace(/<body([^>]*)>/, `<body$1>${STICKY_BAR}`);
+            });
+        });
         cy.visit(`${previewUrl}#bottom-section`);
-        cy.get('#bottom-section').should('have.css', 'scroll-margin-top', '120px');
-        cy.get('#bottom-section').then($heading => {
-            const top = $heading[0].getBoundingClientRect().top;
-            expect(top).to.be.within(110, 130);
+        cy.window().should(win => expect(offsetOf(win)).to.be.at.least(100));
+        cy.window().then(win => {
+            const offset = offsetOf(win);
+            cy.get('#bottom-section').should('have.css', 'scroll-margin-top', `${offset + remOf(win)}px`);
+            cy.get('#bottom-section').should($heading => {
+                expect($heading[0].getBoundingClientRect().top).to.be.within(offset, offset + 2 * remOf(win));
+            });
+        });
+    });
+
+    it('measures a header shown after load before a jump, and lets the theme force the margin', () => {
+        cy.visit(previewUrl);
+        cy.document().then(doc => {
+            doc.body.insertAdjacentHTML('afterbegin', STICKY_BAR);
+            doc.querySelector('main, body').insertAdjacentHTML('afterbegin', '<a id="ha-test-link" href="#bottom-section">Bottom</a>');
+        });
+        cy.get('#ha-test-link').click({scrollBehavior: false});
+        cy.window().then(win => {
+            const offset = offsetOf(win);
+            expect(offset).to.be.at.least(100);
+            cy.get('#bottom-section').should($heading => {
+                expect($heading[0].getBoundingClientRect().top).to.be.within(offset, offset + 2 * remOf(win));
+            });
+        });
+        cy.document().then(doc => {
+            doc.head.insertAdjacentHTML('beforeend', '<style>:root{--heading-anchors-scroll-margin:3rem}</style>');
+        });
+        cy.window().then(win => {
+            cy.get('#bottom-section').should('have.css', 'scroll-margin-top', `${3 * remOf(win)}px`);
         });
     });
 

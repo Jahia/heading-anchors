@@ -17,7 +17,9 @@ First release.
 - Per-site activation: the filter only applies to sites on which the module is enabled.
 - Karaf configuration `org.jahia.community.headinganchors.cfg`, kept on module redeployment: render modes,
   heading levels, scope selectors (`tag`, `#id`, `.class`, `tag#id`, `tag.class`), `heading` or `anchor` mode,
-  handling of existing ids, scroll margin for sticky headers.
+  handling of existing ids.
+- Headings reached by a link stop below the sticky or fixed header of the site: its height is measured in the
+  browser, per site and per template, without configuration (`--heading-anchors-scroll-margin` still overrides it).
 - Slugs compatible with the academy `toc.min.js` for Latin text, transliteration with the Jahia character map
   (Cyrillic, Greek, Arabic, Armenian, Georgian), letters kept for scripts without transliteration (CJK, Hebrew,
   Thai, Devanagari...). Duplicates get a `_1`, `_2`... suffix.

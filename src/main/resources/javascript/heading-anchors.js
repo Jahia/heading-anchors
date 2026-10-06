@@ -10,6 +10,101 @@
     var hideTimer;
     var clearTimer;
 
+    // Sticky or fixed header of the site: a bar at least half as wide as the page, attached to the top. Taller
+    // elements are overlays (menus, dialogs), and the offset never exceeds half of the viewport
+    var PROBES = [0.1, 0.5, 0.9];
+    var MIN_BAR_WIDTH = 0.5;
+    var MAX_BAR_HEIGHT = 0.9;
+    var MAX_OFFSET = 0.5;
+    var offset = 0;
+    var resizeFrame;
+
+    function barBottom(element, y, width) {
+        var position = window.getComputedStyle(element).position;
+        if (position !== 'fixed' && position !== 'sticky') {
+            return 0;
+        }
+        var rect = element.getBoundingClientRect();
+        if (rect.top > y || rect.width < width * MIN_BAR_WIDTH || rect.height >= window.innerHeight * MAX_BAR_HEIGHT) {
+            return 0;
+        }
+        return rect.bottom;
+    }
+
+    function measureOffset() {
+        if (!document.elementsFromPoint) {
+            return;
+        }
+        var width = document.documentElement.clientWidth;
+        var bottom = 0;
+        // Bars can be stacked (top bar, then navigation): probe again just below the last bar found
+        for (var pass = 0; pass < 5; pass++) {
+            var y = bottom + 1;
+            var next = bottom;
+            PROBES.forEach(function (ratio) {
+                document.elementsFromPoint(width * ratio, y).forEach(function (element) {
+                    if (!status || !status.contains(element)) {
+                        next = Math.max(next, barBottom(element, y, width));
+                    }
+                });
+            });
+            if (next <= bottom) {
+                break;
+            }
+            bottom = next;
+        }
+        offset = Math.min(Math.ceil(bottom), Math.round(window.innerHeight * MAX_OFFSET));
+        document.documentElement.style.setProperty('--heading-anchors-offset', offset + 'px');
+    }
+
+    function hashTarget() {
+        var id;
+        try {
+            id = decodeURIComponent(window.location.hash.slice(1));
+        } catch (e) {
+            return null;
+        }
+        var target = id && document.getElementById(id);
+        return target && target.closest('[data-heading-anchors]') ? target : null;
+    }
+
+    // The browser jumped to the fragment before the header was measured: scroll again only when the target is
+    // hidden under the header, so a reader who already scrolled is never moved
+    function revealHashTarget() {
+        var target = hashTarget();
+        if (!target) {
+            return;
+        }
+        var top = target.getBoundingClientRect().top;
+        if (top >= -1 && top < offset) {
+            target.scrollIntoView({block: 'start', behavior: 'instant'});
+        }
+    }
+
+    measureOffset();
+    if (document.readyState === 'complete') {
+        revealHashTarget();
+    } else {
+        window.addEventListener('load', function () {
+            measureOffset();
+            revealHashTarget();
+        });
+    }
+
+    window.addEventListener('resize', function () {
+        window.cancelAnimationFrame(resizeFrame);
+        resizeFrame = window.requestAnimationFrame(measureOffset);
+    });
+
+    // Headers can change on scroll (shrink, hide): measured again just before a jump to a fragment of this page
+    document.addEventListener('click', function (event) {
+        var link = event.target.closest && event.target.closest('a[href]');
+        if (link && link.hash && link.origin === window.location.origin && link.pathname === window.location.pathname
+                && link.search === window.location.search) {
+            measureOffset();
+        }
+    }, true);
+
     // WCAG 2.4.11: never cover the focused element, move the toast to the top instead
     function placeAwayFromFocus() {
         status.classList.remove('is-top');
