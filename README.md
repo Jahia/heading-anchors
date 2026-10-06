@@ -1,5 +1,10 @@
 # Heading Anchors
 
+[![Jahia 8.2.1+](https://img.shields.io/badge/Jahia-8.2.1%2B-blue)](https://www.jahia.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Jahia Store](https://img.shields.io/badge/Jahia%20Store-heading--anchors-brightgreen)](https://store.jahia.com/contents/modules-repository/org/jahia/community/heading-anchors.html)
+[![WCAG 2.2 AA](https://img.shields.io/badge/WCAG-2.2%20AA-005a9c)](https://www.w3.org/TR/WCAG22/)
+
 Jahia module that adds slug-based anchors to the headings of rendered pages, so that any section can be linked
 directly (for example `/customer-center.html#jahia-lifecycle`), whatever the template or the component used.
 It can optionally add a "copy link" button next to each heading.
