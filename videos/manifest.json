@@ -2,8 +2,12 @@
   "slug": "heading-anchors-overview",
   "title": "Heading Anchors for Jahia",
   "language": "en-US",
-  "voice": "Puck",
-  "voiceStyle": "Warm, friendly and confident male voice, like an experienced support engineer showing a feature to a colleague. Smile audibly, no advertising tone. Clear articulation, calm medium pace, short pauses between sentences, same timbre and energy in every chapter.",
+  "voice": "Sadachbia",
+  "voiceStyle": "Young, bright and upbeat voice, smiling audibly all the way through, like an enthusiastic developer happily showing a neat little feature to friends. Positive and energetic but natural, never salesy. Clear articulation, lively pace, short pauses between sentences, same timbre and energy in every chapter.",
+  "music": {
+    "file": "assets/mixkit-tech-house-vibes-130.mp3",
+    "volume": 0.22
+  },
   "viewport": {
     "width": 1280,
     "height": 800
@@ -12,52 +16,52 @@
     {
       "id": "problem",
       "title": "Linking to a section",
-      "narration": "Long documentation pages are hard to share. Here is a page with several sections, but its headings have no anchors. If I add a section name to the address, the browser has nothing to jump to. The link opens the top of the page, and the reader has to scroll and search."
+      "narration": "Ever wanted to share a link to one specific section of a long page? Here is a page with several sections, but its headings have no anchors yet. Add a section name to the address, and the browser has nothing to jump to: the reader lands at the top and has to scroll and search. Let's fix that!"
     },
     {
       "id": "enable",
       "title": "Enable the module on a site",
-      "narration": "Heading Anchors fixes this with a single module. After deploying it, open Administration, then Modules, find Heading Anchors, and enable it on the sites that need it. Sites where the module is not enabled are never touched."
+      "narration": "Heading Anchors solves this with one small module. Once it's deployed, open Administration, then Modules, find Heading Anchors, and enable it on the sites that need it. Sites without the module stay exactly as they are."
     },
     {
       "id": "anchors",
-      "title": "Readable anchors on every heading",
-      "narration": "Back on the page, nothing looks different, but every heading now has a readable anchor, built from its text. The same link now jumps straight to the section. One detail, though: this site has a sticky header, and the heading lands just underneath it."
+      "title": "Readable anchors, below the sticky header",
+      "narration": "Back on the page, nothing looks different, but every heading now has a clean, readable anchor, built from its text. And the same link now jumps right to the section. Notice the sticky header? The heading stops just below it, automatically. The module measures the header on every site, so there's nothing to set."
     },
     {
       "id": "configure",
       "title": "Configure it in the OSGi console",
-      "narration": "Everything is configured in the OSGi console, under Tools. Open Configuration, then Heading anchors. Let's turn on the copy link button, and set the scroll margin to ninety pixels, the height of the sticky header. Save, and the change applies immediately, without any restart. The configuration file survives module redeployments."
+      "narration": "Want more? Everything is configured in the OSGi console, under Tools. Open Configuration, then Heading anchors, and turn on the copy link button. Save, and it's live right away, no restart needed. And your configuration file survives module redeployments."
     },
     {
       "id": "copy",
       "title": "Copy a link in one click",
-      "narration": "Reload the page. The link now stops right below the header. Hover a heading, and a small hash button appears, with a Copy link tooltip. One click copies the full link to the section, and a short message confirms it. It also works with the keyboard: tab to the button, and press Enter."
+      "narration": "Reload the page and hover a heading: a small hash button pops up, with a Copy link tooltip. One click copies the full link to the section, and a short message confirms it. It works great with the keyboard too: tab to the button, and press Enter."
     },
     {
       "id": "languages",
       "title": "Every language and script",
-      "narration": "The button and the messages follow the language of the page. Here is the French version, with Copier le lien. Anchors stay readable in every script. Cyrillic headings are transliterated, like content system names, and Chinese headings keep their characters."
+      "narration": "The button and the messages speak the language of the page. Here is the French version, with Copier le lien. And anchors stay readable in every script: Cyrillic headings are transliterated, just like content system names, and Chinese headings keep their characters."
     },
     {
       "id": "existing",
       "title": "Existing and duplicated ids",
-      "narration": "Ids that editors already typed are kept, and the button copies them. Two sections with the same title get unique anchors, with a numbered suffix. And manual anchors from older workarounds are left untouched, unless you ask the module to adopt them."
+      "narration": "Ids that editors already typed are kept, and the button copies them as is. Two sections with the same title? Each one gets its own anchor, with a numbered suffix. And manual anchors from older workarounds are left untouched, unless you ask the module to adopt them."
     },
     {
       "id": "rename",
       "title": "Anchors follow the heading text",
-      "narration": "Anchors are built from the heading text. Rename a heading, here Release cadence becomes Release schedule, and its anchor changes too, so older links to it stop working. When a link must stay stable, type a fixed id on the heading in the editor. The module keeps it as is."
+      "narration": "Good to know: anchors are built from the heading text. Rename a heading, here Release cadence becomes Release schedule, and its anchor changes too, so older links to it won't find it anymore. Need a link that never changes? Simply type a fixed id on the heading in the editor, and the module keeps it."
     },
     {
       "id": "safe",
       "title": "Safe for every site",
-      "narration": "The module is designed to stay out of the way. It never changes the page layout, its styles only target what it adds, and it meets the WCAG 2.2 level AA accessibility requirements. And if you disable it on a site, the pages render exactly as before."
+      "narration": "The module is designed to stay out of your way. It never changes the page layout, its styles only touch what it adds, and it meets the WCAG 2.2 level AA accessibility requirements. Disable it on a site, and pages render exactly as before."
     },
     {
       "id": "wrap-up",
       "title": "Get Heading Anchors",
-      "narration": "Heading Anchors works with version 8.2.1 and later. Get it from the Store, and find the code and the documentation on GitHub. Thanks for watching."
+      "narration": "Heading Anchors works with version 8.2.1 and later. Grab it from the Store, and find the code and the documentation on GitHub. Thanks for watching, and happy linking!"
     }
   ]
 }

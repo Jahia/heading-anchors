@@ -11,6 +11,8 @@ chapter (title and narration).
 - Node.js 20+, ffmpeg and ffprobe
 - `GEMINI_API_KEY` in `videos/.env.video.local` (git-ignored; a link to an existing file works). Optional:
   `GEMINI_TTS_MODEL`, `GEMINI_TTS_VOICE`, `VIDEO_AUDIT_MODEL`
+- optional background music: the file named by `music.file` in the manifest (`assets/` is git-ignored: the track
+  is not redistributed with the code). Without it, the video has no music
 
 ```bash
 npm install
@@ -36,5 +38,6 @@ Outputs are in `output/heading-anchors-overview/` (git-ignored): `heading-anchor
   (`at(0.4)`), then waits for the end of the narration. Mouse clicks and key presses are logged for the sound
   effects. `tools/overlay.js` adds a demo overlay: visible cursor, page address, chapter title, anchor badges.
 - `tools/assemble.mjs` places each narration at the start of its chapter (and fails if one would run into the next
-  chapter), adds click and key sounds synthesized locally, normalizes the audio and encodes the MP4.
+  chapter), adds click and key sounds synthesized locally, loops the background music with a crossfade and lowers it
+  under the narration (compressor keyed on the voice), normalizes the audio and encodes the MP4.
 - The narration never says "Jahia", to avoid a wrong pronunciation by the voice.

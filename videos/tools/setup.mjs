@@ -1,5 +1,5 @@
 // Demo data for the recording, on the local test Jahia (tests/ stack with the Digitall site):
-// - default module configuration (no permalink button, default scroll margin)
+// - default module configuration (no permalink button)
 // - module disabled on Digitall, so the video starts from a page without anchors
 // - demo page under the Digitall home page, in English and French, published
 import {sleep} from './lib.mjs';
@@ -50,7 +50,7 @@ export async function configure(properties) {
 export const DEFAULTS = {
     enabled: 'true', modes: 'live,preview', headings: 'h1,h2,h3,h4,h5', scope: 'main,body', mode: 'heading',
     existingId: 'keep', legacyAnchors: 'keep', 'permalink.enabled': 'false', 'permalink.headings': 'h2,h3,h4,h5',
-    'permalink.label': '', 'permalink.copiedMessage': '', 'permalink.fallbackMessage': '', scrollMarginTop: ''
+    'permalink.label': '', 'permalink.copiedMessage': '', 'permalink.fallbackMessage': ''
 };
 
 export async function setModuleOnSite(enabled) {

@@ -173,11 +173,14 @@ await scene(chapter('anchors'), async at => {
     await goto(liveUrl('en'));
     await at(0.2);
     await demo('showIds');
-    await at(0.5);
+    await at(0.36);
     await goto(`${liveUrl('en')}#jahia-lifecycle`);
     await page.waitForTimeout(800);
     await demo('showIds');
-    await at(0.78);
+    await at(0.55);
+    // The heading stops below the sticky header, measured by the module
+    await pointAt(page.locator('.header-v8').first());
+    await at(0.7);
     await pointAt(page.locator('#jahia-lifecycle'));
 });
 
@@ -186,12 +189,9 @@ await scene(chapter('configure'), async at => {
     await at(0.12);
     await clickOn(page.getByText('Heading anchors', {exact: true}).first());
     await page.waitForTimeout(1000);
-    await at(0.3);
+    await at(0.4);
     await clickOn(page.locator('input[type="checkbox"][name="permalink.enabled"]'));
-    await at(0.45);
-    const margin = page.locator('.ui-dialog [name="scrollMarginTop"]');
-    await typeSlowly(margin, '90px');
-    await at(0.62);
+    await at(0.58);
     await clickOn(page.locator('.ui-dialog-buttonpane button').filter({hasText: 'Save'}));
     await page.waitForTimeout(2500);
 });
@@ -199,12 +199,13 @@ await scene(chapter('configure'), async at => {
 await scene(chapter('copy'), async at => {
     await goto(`${liveUrl('en')}#jahia-lifecycle`);
     await page.waitForTimeout(600);
+    await at(0.1);
     await pointAt(page.locator('#jahia-lifecycle'));
-    await at(0.28);
+    await at(0.2);
     await pointAt(page.locator('#jahia-lifecycle > .heading-anchors-permalink'));
-    await at(0.42);
+    await at(0.36);
     await clickOn(page.locator('#jahia-lifecycle > .heading-anchors-permalink'));
-    await at(0.7);
+    await at(0.68);
     // Click the paragraph right after the heading: the next Tab goes to the button of the following heading
     await clickOn(page.locator('#jahia-lifecycle + p'));
     await press('Tab');

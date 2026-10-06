@@ -1,12 +1,17 @@
-// Assembly: places each chapter narration at the start of its chapter, mixes and normalizes the audio,
-// encodes the MP4 and writes WebVTT captions. Refuses narration that would run into the next chapter.
-import {readFileSync} from 'node:fs';
+// Assembly: places each chapter narration at the start of its chapter, adds the background music (ducked under
+// the narration), mixes and normalizes the audio, encodes the MP4 and writes WebVTT captions. Refuses narration
+// that would run into the next chapter.
+import {existsSync, readFileSync} from 'node:fs';
 import {writeFile} from 'node:fs/promises';
 import path from 'node:path';
-import {chapterAudio, durationMs, manifest, outputDir, run} from './lib.mjs';
+import {chapterAudio, durationMs, manifest, outputDir, run, videosDir} from './lib.mjs';
 
 const LEAD_MS = 300;
 const RATE = 48000;
+// Background music: looped with a crossfade, faded in and out, lowered by a compressor keyed on the narration
+const MUSIC_CROSSFADE_S = 6;
+const MUSIC_FADE_IN_S = 1.5;
+const MUSIC_FADE_OUT_S = 4;
 
 /** Input sounds synthesized locally: a short mouse click and a lighter key press, with a little random variation. */
 function synthesize(type, seed) {
@@ -83,8 +88,35 @@ for (const [index, cue] of timeline.cues.entries()) {
     cue.audioStartMs = startMs;
     cue.audioMs = audioMs;
 }
-labels.push('[1:a]');
-filters.push(`${labels.join('')}amix=inputs=${labels.length}:normalize=0:dropout_transition=0,loudnorm=I=-16:TP=-1.5:LRA=11[mix]`);
+filters.push(`${labels.join('')}amix=inputs=${labels.length}:normalize=0:dropout_transition=0[voice]`);
+const mix = ['[1:a]'];
+const musicFile = manifest.music && path.join(videosDir, manifest.music.file);
+if (musicFile && existsSync(musicFile)) {
+    const totalS = captureMs / 1000;
+    const musicS = await durationMs(musicFile) / 1000;
+    const copies = Math.max(1, Math.ceil((totalS - MUSIC_CROSSFADE_S) / (musicS - MUSIC_CROSSFADE_S)));
+    const first = inputs.length / 2;
+    for (let i = 0; i < copies; i++) {
+        inputs.push('-i', musicFile);
+        filters.push(`[${first + i}:a]aresample=${RATE},aformat=channel_layouts=stereo[m${i}]`);
+    }
+    let music = '[m0]';
+    for (let i = 1; i < copies; i++) {
+        filters.push(`${music}[m${i}]acrossfade=d=${MUSIC_CROSSFADE_S}:c1=tri:c2=tri[mx${i}]`);
+        music = `[mx${i}]`;
+    }
+    filters.push(`${music}atrim=0:${totalS.toFixed(3)},volume=${manifest.music.volume},afade=t=in:d=${MUSIC_FADE_IN_S},`
+        + `afade=t=out:st=${(totalS - MUSIC_FADE_OUT_S).toFixed(3)}:d=${MUSIC_FADE_OUT_S}[music]`);
+    filters.push('[voice]asplit[voiceout][voicekey]', '[voicekey]aformat=channel_layouts=stereo[key]',
+        '[music][key]sidechaincompress=threshold=0.01:ratio=8:attack=60:release=700[ducked]');
+    mix.push('[voiceout]', '[ducked]');
+} else {
+    mix.push('[voice]');
+    if (manifest.music) {
+        console.warn(`No background music: ${manifest.music.file} not found`);
+    }
+}
+filters.push(`${mix.join('')}amix=inputs=${mix.length}:normalize=0:dropout_transition=0,loudnorm=I=-16:TP=-1.5:LRA=11[mix]`);
 
 await run('ffmpeg', ['-y', '-v', 'error', ...inputs, '-filter_complex', filters.join(';'),
     '-map', '0:v', '-map', '[mix]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p',
