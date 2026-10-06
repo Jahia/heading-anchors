@@ -13,7 +13,8 @@ filter), so ids are unique across all the fragments of the page:
   (`Jahia lifecycle` gives `jahia-lifecycle`)
 - existing ids are kept, duplicates get a `_1`, `_2`... suffix
 - the slug algorithm is the same as the academy `toc.min.js`, so ids previously generated in the browser are unchanged
-- the filter only runs in the configured render modes (live and preview by default), never breaks the rendering:
+- the filter only applies to sites on which the module is enabled (site settings > modules), and only in the
+  configured render modes (live and preview by default), never breaks the rendering:
   on error, the original HTML is returned
 
 ## Configuration
@@ -22,8 +23,7 @@ The file `org.jahia.community.headinganchors.cfg` is copied once into `karaf/etc
 
 | Key | Default | Description |
 |---|---|---|
-| `enabled` | `true` | Enable the filter |
-| `sites` | (empty) | Comma-separated site keys, empty means all sites |
+| `enabled` | `true` | Enable the filter globally (per site: enable the module on the site) |
 | `modes` | `live,preview` | Render modes where anchors are added |
 | `headings` | `h1,h2,h3,h4,h5` | Heading tags to process |
 | `scope` | `main,body` | Ordered selectors (`tag`, `#id`, `.class`, `tag#id`, `tag.class`); the first one matching at least one element is used |

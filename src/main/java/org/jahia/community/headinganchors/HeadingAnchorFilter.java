@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
  * Page-level render filter. Its priority is below the AggregateFilter (16), so it receives the fully
  * aggregated page and can guarantee unique ids across all fragments. Its output is not cached.
  * It must be registered as a {@link RenderFilter} service: that is the interface tracked by the Jahia OSGi registry.
+ * It only applies to sites on which the module is enabled.
  */
 @Component(service = RenderFilter.class, immediate = true, configurationPid = HeadingAnchorFilter.PID)
 @Designate(ocd = HeadingAnchorConfig.class)
@@ -34,12 +35,12 @@ public class HeadingAnchorFilter extends AbstractFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(HeadingAnchorFilter.class);
 
-    private static final String MODULE_PATH = "/modules/heading-anchors";
+    static final String MODULE_ID = "heading-anchors";
+    private static final String MODULE_PATH = "/modules/" + MODULE_ID;
     private static final Pattern HEADING_TAG = Pattern.compile("h[1-6]");
     private static final Pattern CSS_LENGTH = Pattern.compile("^\\d+(\\.\\d+)?(px|rem|em|vh)$");
 
     private volatile boolean enabled;
-    private volatile Set<String> sites = Set.of();
     private volatile Set<String> modes = Set.of();
     private volatile HeadingAnchorSettings settings = new HeadingAnchorSettings();
 
@@ -93,11 +94,10 @@ public class HeadingAnchorFilter extends AbstractFilter {
                 .setPermalinkCopiedMessage(config.permalink_copiedMessage())
                 .setPermalinkFallbackMessage(config.permalink_fallbackMessage())
                 .setScrollMarginTop(scrollMarginTop);
-        sites = Set.copyOf(split(config.sites()));
         modes = Set.copyOf(split(config.modes()));
         enabled = config.enabled() && !headings.isEmpty() && !scopes.isEmpty();
-        logger.info("Heading anchors configured: enabled={}, sites={}, modes={}, headings={}, scope={}, mode={}, permalink={}",
-                enabled, sites, modes, headings, scopes, mode, config.permalink_enabled());
+        logger.info("Heading anchors configured: enabled={}, modes={}, headings={}, scope={}, mode={}, permalink={}",
+                enabled, modes, headings, scopes, mode, config.permalink_enabled());
     }
 
     @Override
@@ -108,11 +108,8 @@ public class HeadingAnchorFilter extends AbstractFilter {
         if (!modes.isEmpty() && !modes.contains(renderContext.getMode())) {
             return previousOut;
         }
-        if (!sites.isEmpty()) {
-            JCRSiteNode site = renderContext.getSite();
-            if (site == null || !sites.contains(site.getSiteKey())) {
-                return previousOut;
-            }
+        if (!isEnabledOnSite(renderContext.getSite())) {
+            return previousOut;
         }
 
         String moduleUrl = renderContext.getRequest().getContextPath() + MODULE_PATH;
@@ -125,6 +122,14 @@ public class HeadingAnchorFilter extends AbstractFilter {
             logger.debug("Heading anchors failure", e);
             return previousOut;
         }
+    }
+
+    /**
+     * The render context already holds the site of the main resource, no extra JCR lookup is needed.
+     * Installed modules are read from the site node, which Jahia keeps in its node cache.
+     */
+    static boolean isEnabledOnSite(JCRSiteNode site) {
+        return site != null && site.getInstalledModules().contains(MODULE_ID);
     }
 
     private static List<String> split(String value) {

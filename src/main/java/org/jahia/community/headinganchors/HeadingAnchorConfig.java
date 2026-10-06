@@ -13,9 +13,6 @@ public @interface HeadingAnchorConfig {
     @AttributeDefinition(description = "Enable the filter")
     boolean enabled() default true;
 
-    @AttributeDefinition(description = "Comma-separated site keys; empty means all sites")
-    String sites() default "";
-
     @AttributeDefinition(description = "Comma-separated render modes (live, preview, edit)")
     String modes() default "live,preview";
 

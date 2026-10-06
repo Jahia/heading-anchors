@@ -1,7 +1,8 @@
-import {addNode, deleteNode} from '@jahia/cypress';
+import {addNode, deleteNode, disableModule, enableModule} from '@jahia/cypress';
 
 describe('Heading anchors', () => {
     const PID = 'org.jahia.community.headinganchors';
+    const moduleId = 'heading-anchors';
     const siteKey = 'digitall';
     const pageName = 'heading-anchors-test';
     const pagePath = `/sites/${siteKey}/home/${pageName}`;
@@ -9,7 +10,6 @@ describe('Heading anchors', () => {
 
     const DEFAULTS: Record<string, string> = {
         enabled: 'true',
-        sites: '',
         modes: 'live,preview',
         headings: 'h1,h2,h3,h4,h5',
         scope: 'main,body',
@@ -71,6 +71,7 @@ describe('Heading anchors', () => {
 
     before(() => {
         cy.login();
+        enableModule(moduleId, siteKey);
         deleteNode(pagePath);
         addNode({
             parentPathOrId: `/sites/${siteKey}/home`,
@@ -178,9 +179,13 @@ describe('Heading anchors', () => {
         });
     });
 
-    it('is disabled on sites that are not configured', () => {
-        configure({sites: 'another-site'});
-        waitForPage(html => !html.includes('id="jahia-lifecycle"'));
+    it('only applies on sites where the module is enabled', () => {
+        configure({});
+        waitForPage(html => html.includes('id="jahia-lifecycle"'));
+        disableModule(moduleId, siteKey);
+        waitForPage(html => !html.includes('id="jahia-lifecycle"') && !html.includes('heading-anchors.css'));
+        enableModule(moduleId, siteKey);
+        waitForPage(html => html.includes('id="jahia-lifecycle"'));
     });
 
     it('is disabled in render modes that are not configured', () => {
