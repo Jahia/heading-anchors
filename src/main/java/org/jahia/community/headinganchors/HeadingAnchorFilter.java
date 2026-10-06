@@ -5,6 +5,7 @@ import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
 import org.jahia.services.render.filter.AbstractFilter;
 import org.jahia.services.render.filter.RenderChain;
+import org.jahia.services.render.filter.RenderFilter;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
@@ -23,8 +24,9 @@ import java.util.stream.Collectors;
 /**
  * Page-level render filter. Its priority is below the AggregateFilter (16), so it receives the fully
  * aggregated page and can guarantee unique ids across all fragments. Its output is not cached.
+ * It must be registered as a {@link RenderFilter} service: that is the interface tracked by the Jahia OSGi registry.
  */
-@Component(service = AbstractFilter.class, immediate = true, configurationPid = HeadingAnchorFilter.PID)
+@Component(service = RenderFilter.class, immediate = true, configurationPid = HeadingAnchorFilter.PID)
 @Designate(ocd = HeadingAnchorConfig.class)
 public class HeadingAnchorFilter extends AbstractFilter {
 
